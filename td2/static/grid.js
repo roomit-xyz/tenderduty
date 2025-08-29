@@ -15,13 +15,16 @@ let isDark = true
 function lightMode() {
     isDark = !isDark
     if (isDark) {
-        textColor = "#b0b0b0"
+        textColor = "#E8F4F8"
         signColorAlpha = 0.4
-        document.body.className = "uk-background-secondary uk-light"
-        document.getElementById('canvasDiv').className = "uk-width-expand uk-overflow-auto uk-background-secondary"
-        document.getElementById("tableDiv").className = "uk-padding-small uk-text-small uk-background-secondary uk-overflow-auto"
-        document.getElementById("legendContainer").className = "uk-nav-center uk-background-secondary uk-padding-remove"
-        document.getElementById("logs").style = "background: #080808; height: 300px;"
+        document.body.className = "roomit-theme"
+        document.getElementById('canvasDiv').className = "canvas-container"
+        document.getElementById("tableDiv").className = "elegant-card"
+        document.getElementById("tableDiv").style = "margin-bottom: 24px;"
+        document.getElementById("legendContainer").className = "uk-nav-center uk-padding-remove"
+        document.getElementById("legendContainer").style = "margin-top: 16px;"
+        document.getElementById("logs").className = "elegant-logs uk-resize-vertical"
+        document.getElementById("logs").style = "margin: 0; border-radius: 0 0 12px 12px; height: 300px;"
 
         return
     }
@@ -61,13 +64,13 @@ function legend() {
 
     let offset = textW
     let grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
-    grad.addColorStop(0, 'rgb(123,255,66)');
-    grad.addColorStop(0.3, 'rgb(240,255,128)');
-    grad.addColorStop(0.8, 'rgb(169,250,149)');
+    grad.addColorStop(0, '#00D4AA');
+    grad.addColorStop(0.3, '#1ADDC0');
+    grad.addColorStop(0.8, '#00F2C3');
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
     ctx.font = `${scale * 14}px sans-serif`
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     offset += gridW + gridW/2
     ctx.fillText("proposer",offset, gridH/1.2)
 
@@ -76,7 +79,7 @@ function legend() {
     grad.addColorStop(0, 'rgba(0,0,0,0.2)');
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     offset += gridW + gridW/2
     ctx.fillText("signed",offset, gridH/1.2)
 
@@ -88,7 +91,7 @@ function legend() {
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
     offset += gridW + gridW/2
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     ctx.fillText("miss/precommit",offset, gridH/1.2)
 
     offset += 110 * scale
@@ -99,7 +102,7 @@ function legend() {
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
     offset += gridW + gridW/2
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     ctx.fillText("miss/prevote", offset, gridH/1.2)
 
     offset += 90 * scale
@@ -115,7 +118,7 @@ function legend() {
     ctx.strokeStyle = 'white'
     ctx.stroke();
     offset += gridW + gridW/2
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     ctx.fillText("missed", offset, gridH/1.2)
 
     offset += 59 * scale
@@ -124,7 +127,7 @@ function legend() {
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
     offset += gridW + gridW/2
-    ctx.fillStyle = 'grey'
+    ctx.fillStyle = '#A0AEC0'
     ctx.fillText("no data", offset, gridH/1.2)
 }
 
@@ -149,9 +152,9 @@ function drawSeries(multiStates) {
                 const grad = ctx.createLinearGradient((i*gridW)+gridTextW, (gridH*j), (i * gridW) + gridW +gridTextW, (gridH*j))
                 switch (multiStates.Status[j].blocks[i]) {
                     case 4: // proposed
-                        grad.addColorStop(0, 'rgb(123,255,66)');
-                        grad.addColorStop(0.3, 'rgb(240,255,128)');
-                        grad.addColorStop(0.8, 'rgb(169,250,149)');
+                        grad.addColorStop(0, '#00D4AA');
+                        grad.addColorStop(0.3, '#1ADDC0');
+                        grad.addColorStop(0.8, '#00F2C3');
                         break
                     case 3: // signed
                         if (j % 2 === 0) {

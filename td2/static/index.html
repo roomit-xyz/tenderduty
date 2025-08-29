@@ -2,11 +2,225 @@
 <html lang="en">
 <head>
   <style>
-      /*canvas {
-          image-rendering: -moz-crisp-edges;
-          image-rendering: -webkit-crisp-edges;
-          image-rendering: crisp-edges;
-      }*/
+    :root {
+      --roomit-green: #00D4AA;
+      --roomit-green-dark: #00B89A;
+      --roomit-green-light: #1ADDC0;
+      --roomit-green-accent: #00F2C3;
+      --dark-bg: #0F1419;
+      --dark-card: #1A1F2E;
+      --dark-accent: #2A3441;
+      --light-text: #E8F4F8;
+      --muted-text: #A0AEC0;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+    }
+
+    body.roomit-theme {
+      background: linear-gradient(135deg, var(--dark-bg) 0%, #1A1F2E 100%);
+      color: var(--light-text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    .elegant-card {
+      background: var(--dark-card);
+      border: 1px solid rgba(0, 212, 170, 0.2);
+      border-radius: 12px;
+      box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(0, 212, 170, 0.05);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .elegant-card:hover {
+      border-color: rgba(0, 212, 170, 0.4);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 212, 170, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-jailed {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-tombstoned {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .height-animation {
+      animation: pulseGreen 0.6s ease-in-out;
+      color: var(--roomit-green) !important;
+      font-weight: 600;
+    }
+
+    @keyframes pulseGreen {
+      0% { 
+        transform: scale(1);
+        color: var(--light-text);
+      }
+      50% { 
+        transform: scale(1.05);
+        color: var(--roomit-green-accent);
+        text-shadow: 0 0 8px rgba(0, 212, 170, 0.4);
+      }
+      100% { 
+        transform: scale(1);
+        color: var(--roomit-green);
+      }
+    }
+
+    .elegant-table {
+      background: var(--dark-card);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 170, 0.1);
+      overflow: hidden;
+    }
+
+    .elegant-table th {
+      background: linear-gradient(90deg, var(--roomit-green-dark), var(--roomit-green));
+      color: white;
+      font-weight: 600;
+      padding: 12px 16px;
+      border: none;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+
+    .elegant-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(0, 212, 170, 0.1);
+      vertical-align: middle;
+    }
+
+    .elegant-table tr:hover {
+      background: rgba(0, 212, 170, 0.05);
+    }
+
+    .elegant-logs {
+      background: var(--dark-card);
+      border: 1px solid rgba(0, 212, 170, 0.2);
+      border-radius: 12px;
+      color: var(--light-text);
+      font-family: 'Fira Code', 'Monaco', monospace;
+      padding: 16px;
+      line-height: 1.5;
+      scroll-behavior: smooth;
+    }
+
+    .elegant-logs::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .elegant-logs::-webkit-scrollbar-track {
+      background: var(--dark-accent);
+      border-radius: 4px;
+    }
+
+    .elegant-logs::-webkit-scrollbar-thumb {
+      background: var(--roomit-green);
+      border-radius: 4px;
+    }
+
+    .elegant-logs::-webkit-scrollbar-thumb:hover {
+      background: var(--roomit-green-light);
+    }
+
+    .canvas-container {
+      background: var(--dark-card);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 170, 0.2);
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .light-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--dark-card);
+      border: 1px solid rgba(0, 212, 170, 0.3);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .light-toggle:hover {
+      background: var(--roomit-green);
+      color: white;
+      transform: scale(1.1);
+    }
+
+    .uptime-bar {
+      background: var(--dark-accent);
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+
+    .uptime-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--roomit-green-dark), var(--roomit-green));
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .chain-badge {
+      display: inline-block;
+      background: rgba(0, 212, 170, 0.1);
+      color: var(--roomit-green-light);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid rgba(0, 212, 170, 0.3);
+    }
+
+    .footer-elegant {
+      margin-top: 40px;
+      padding: 20px 0;
+      border-top: 1px solid rgba(0, 212, 170, 0.1);
+    }
+
+    .footer-elegant a {
+      color: var(--muted-text);
+      transition: color 0.3s ease;
+    }
+
+    .footer-elegant a:hover {
+      color: var(--roomit-green);
+    }
   </style>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,26 +234,32 @@
   <link rel="icon" href="favicon.png">
 </head>
 
-<body class="uk-background-secondary uk-light" onload="loadState(); legend()">
-<div class="uk-container uk-width-expand uk-height-viewport">
-  <div class="uk-width-expand uk-overflow-auto uk-background-secondary" id="canvasDiv">
+<body class="roomit-theme" onload="loadState(); legend()">
+<div class="uk-container uk-width-expand uk-height-viewport" style="padding: 24px;">
+  
+  <div class="light-toggle" onclick="lightMode()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+    </svg>
+  </div>
+  <div class="canvas-container" id="canvasDiv">
     <div style="width: 4835px;" class="uk-padding-remove-horizontal">
       <canvas id="canvas" height="20" width="4735"></canvas>
     </div>
-    <div id="legendContainer" class="uk-nav-center uk-background-secondary uk-padding-remove">
+    <div id="legendContainer" class="uk-nav-center uk-padding-remove" style="margin-top: 16px;">
       <canvas id="legend" height="32" width="700"></canvas>
     </div>
   </div>
 
-  <div class="uk-padding-small uk-text-small uk-background-secondary uk-overflow-auto" id="tableDiv">
-    <table class="uk-table uk-table-small uk-table-justify uk-padding-remove">
+  <div class="elegant-card" id="tableDiv" style="margin-bottom: 24px;">
+    <table class="uk-table uk-table-small uk-table-justify elegant-table uk-padding-remove">
       <thead>
       <tr>
         <th></th>
         <th>Chain</th>
         <th>Height</th>
         <th>Moniker</th>
-        <th style="text-align: center">Bonded</th>
+        <th style="text-align: center">Status</th>
         <th class="uk-text-center">Uptime</th>
         <th class="uk-text-center">RPC Nodes</th>
       </tr>
@@ -48,15 +268,31 @@
     </table>
   </div>
 
-  <div class="uk-padding-large uk-padding-remove-top" id="logContainer">
-    <pre id="logs" class="uk-panel-scrollable uk-resize-vertical" style="background: #080808; height: 300px;"></pre>
+  <div class="elegant-card" id="logContainer" style="padding: 0;">
+    <div style="padding: 16px; border-bottom: 1px solid rgba(0, 212, 170, 0.1);">
+      <h4 style="margin: 0; color: var(--roomit-green); font-size: 16px; font-weight: 600;">
+        Real-time Logs
+        <span style="display: inline-block; width: 8px; height: 8px; background: var(--roomit-green); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite;"></span>
+      </h4>
+    </div>
+    <pre id="logs" class="elegant-logs uk-resize-vertical" style="margin: 0; border-radius: 0 0 12px 12px; height: 300px;"></pre>
   </div>
 
-  <div class="uk-text-small uk-text-center">
-    <a class="uk-link-muted" onclick="lightMode()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-brightness-high" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/></svg></a>
-    <a class="uk-link-muted" href="https://blockpane.com"><img src="bp-logo-text.svg" alt="[ block pane ]" style="height: 24px;"></a>
-    <a href="https://github.com/blockpane/tenderduty"><span uk-icon="github" style="color: grey"></span></a>
+  <div class="footer-elegant uk-text-small uk-text-center">
+    <a class="uk-link-muted" href="https://blockpane.com">
+      <img src="bp-logo-text.svg" alt="[ block pane ]" style="height: 24px; opacity: 0.7;">
+    </a>
+    <a href="https://github.com/blockpane/tenderduty" style="margin-left: 12px;">
+      <span uk-icon="github" style="color: var(--muted-text);"></span>
+    </a>
   </div>
+
+<style>
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>
 </div>
 </body>
 </html>
