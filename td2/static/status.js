@@ -86,27 +86,31 @@ function updateTable(status) {
         let bonded = ""
         switch (true) {
             case status.Status[i].tombstoned:
-                bonded = "<div class='uk-text-warning'><span uk-icon='ban'></span> <strong>Tombstoned</strong></div>"
+                bonded = "<div class='status-indicator status-tombstoned'><span uk-icon='ban'></span> Tombstoned</div>"
                 break
             case status.Status[i].jailed:
-                bonded = "<span uk-icon='warning'></span> <strong>Jailed</strong>"
+                bonded = "<div class='status-indicator status-jailed'><span uk-icon='warning'></span> Jailed</div>"
                 break
             case status.Status[i].bonded:
-                bonded = "<span uk-icon='check'></span>"
+                bonded = "<div class='status-indicator status-active'><span uk-icon='check'></span> Active</div>"
                 break
             default:
-                bonded = "<span uk-icon='minus-circle'></span> Not active"
+                bonded = "<div class='status-indicator' style='background: rgba(160, 174, 192, 0.2); color: var(--muted-text);'><span uk-icon='minus-circle'></span> Inactive</div>"
         }
 
+        let uptimePercentage = 0
         let window = `<div class="uk-width-1-2" style="text-align: end">`
         if (status.Status[i].missed === 0 && status.Status[i].window === 0) {
             window += "error</div>"
         } else if (status.Status[i].missed === 0) {
+            uptimePercentage = 100
             window += `100%</div>`
         } else {
-            window += `${(100 - (status.Status[i].missed / status.Status[i].window) * 100).toFixed(2)}%</div>`
+            uptimePercentage = (100 - (status.Status[i].missed / status.Status[i].window) * 100)
+            window += `${uptimePercentage.toFixed(2)}%</div>`
         }
-        window += `<div class="uk-width-1-2">${_.escape(status.Status[i].missed)} / ${_.escape(status.Status[i].window)}</div>`
+        window += `<div class="uk-width-1-2" style="color: var(--muted-text); font-size: 12px;">${_.escape(status.Status[i].missed)} / ${_.escape(status.Status[i].window)}</div>`
+        window += `<div class="uptime-bar"><div class="uptime-fill" style="width: ${uptimePercentage}%"></div></div>`
 
         let nodes = `${_.escape(status.Status[i].healthy_nodes)} / ${_.escape(status.Status[i].nodes)}`
         if (status.Status[i].healthy_nodes < status.Status[i].nodes) {
@@ -115,13 +119,13 @@ function updateTable(status) {
 
         let heightClass = ""
         if (blocks.get(status.Status[i].chain_id) !== status.Status[i].height){
-            heightClass = fade
+            heightClass = "height-animation"
         }
         blocks.set(status.Status[i].chain_id, status.Status[i].height)
 
         let r=document.getElementById('statusTable').insertRow(i)
         r.insertCell(0).innerHTML = `<div>${alerts}</div>`
-        r.insertCell(1).innerHTML = `<div>${_.escape(status.Status[i].name)} (${_.escape(status.Status[i].chain_id)})</div>`
+        r.insertCell(1).innerHTML = `<div><span class="chain-badge">${_.escape(status.Status[i].name)}</span> <span style="color: var(--muted-text); font-size: 11px;">(${_.escape(status.Status[i].chain_id)})</span></div>`
         r.insertCell(2).innerHTML = `<div class="${heightClass}" style="font-family: monospace; color: #6f6f6f; text-align: start">${_.escape(status.Status[i].height)}</div>`
         if (status.Status[i].moniker === "not connected") {
             r.insertCell(3).innerHTML = `<div class="uk-text-warning">${_.escape(status.Status[i].moniker)}</div>`
