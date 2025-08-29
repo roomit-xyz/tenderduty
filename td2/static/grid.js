@@ -8,9 +8,40 @@ let gridTextMax = textMax
 let gridTextW = textW
 let scale = 1
 let textColor = "#b0b0b0"
+let isMobile = window.innerWidth <= 768
 
 let signColorAlpha = 0.4 // alpha set in loop
 let isDark = true
+
+// Responsive canvas sizing
+function getCanvasWidth() {
+    const container = document.getElementById('canvasDiv')
+    const containerWidth = container ? container.clientWidth : window.innerWidth
+    return Math.max(containerWidth - 40, 320) // minimum 320px width
+}
+
+function getLegendWidth() {
+    return Math.min(getCanvasWidth(), 700)
+}
+
+// Update mobile status on resize
+window.addEventListener('resize', () => {
+    const newIsMobile = window.innerWidth <= 768
+    if (newIsMobile !== isMobile) {
+        isMobile = newIsMobile
+        // Trigger redraw if needed
+        const canvas = document.getElementById('canvas')
+        if (canvas) {
+            // Force redraw with new dimensions
+            setTimeout(() => {
+                if (typeof drawSeries === 'function' && window.currentState) {
+                    drawSeries(window.currentState)
+                }
+                legend()
+            }, 100)
+        }
+    }
+})
 
 function lightMode() {
     isDark = !isDark
@@ -56,22 +87,29 @@ function fix_dpi(id) {
 
 function legend() {
     const l = document.getElementById("legend")
+    const legendWidth = getLegendWidth()
+    l.width = legendWidth
     l.height = scale * h * 1.2
     const ctx = l.getContext('2d')
+    
+    // Scale legend items for mobile
+    const itemScale = isMobile ? 0.8 : 1
+    const fontSize = Math.max(10, scale * 14 * itemScale)
+    const itemSpacing = isMobile ? 45 : 65
 
-    let offset = textW
+    let offset = isMobile ? textW * 0.5 : textW
     let grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, 'rgb(123,255,66)');
     grad.addColorStop(0.3, 'rgb(240,255,128)');
     grad.addColorStop(0.8, 'rgb(169,250,149)');
     ctx.fillStyle = grad
     ctx.fillRect(offset, 0, gridW, gridH)
-    ctx.font = `${scale * 14}px sans-serif`
+    ctx.font = `${fontSize}px sans-serif`
     ctx.fillStyle = 'grey'
     offset += gridW + gridW/2
     ctx.fillText("proposer",offset, gridH/1.2)
 
-    offset += 65 * scale
+    offset += itemSpacing * scale
     grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, 'rgba(0,0,0,0.2)');
     ctx.fillStyle = grad
@@ -80,7 +118,7 @@ function legend() {
     offset += gridW + gridW/2
     ctx.fillText("signed",offset, gridH/1.2)
 
-    offset += 50 * scale
+    offset += (isMobile ? 40 : 50) * scale
     grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, '#85c0f9');
     grad.addColorStop(0.7, '#85c0f9');
@@ -91,7 +129,7 @@ function legend() {
     ctx.fillStyle = 'grey'
     ctx.fillText("miss/precommit",offset, gridH/1.2)
 
-    offset += 110 * scale
+    offset += (isMobile ? 80 : 110) * scale
     grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, '#381a34');
     grad.addColorStop(0.2, '#d06ec7');
@@ -102,7 +140,7 @@ function legend() {
     ctx.fillStyle = 'grey'
     ctx.fillText("miss/prevote", offset, gridH/1.2)
 
-    offset += 90 * scale
+    offset += (isMobile ? 60 : 90) * scale
     grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, '#8e4b26');
     grad.addColorStop(0.4, 'darkorange');
@@ -118,7 +156,7 @@ function legend() {
     ctx.fillStyle = 'grey'
     ctx.fillText("missed", offset, gridH/1.2)
 
-    offset += 59 * scale
+    offset += (isMobile ? 40 : 59) * scale
     grad = ctx.createLinearGradient(offset, 0, offset+gridW, gridH)
     grad.addColorStop(0, 'rgba(127,127,127,0.3)');
     ctx.fillStyle = grad
@@ -129,12 +167,28 @@ function legend() {
 }
 
 function drawSeries(multiStates) {
+    window.currentState = multiStates // Store for resize events
     const canvas = document.getElementById("canvas")
+    
+    // Calculate responsive canvas dimensions
+    const canvasWidth = getCanvasWidth()
+    const maxBlocks = Math.max(...multiStates.Status.map(s => s.blocks.length))
+    const neededWidth = Math.max(canvasWidth, (maxBlocks * gridW) + gridTextW + 50)
+    
+    canvas.width = neededWidth
     canvas.height = ((12*gridH*multiStates.Status.length)/10) + 30
+    
+    // Update canvas container width
+    const container = canvas.parentElement
+    if (container) {
+        container.style.width = neededWidth + 'px'
+    }
+    
     fix_dpi("canvas")
     if (canvas.getContext) {
         const ctx = canvas.getContext('2d')
-        ctx.font = `${scale * 16}px sans-serif`
+        const fontSize = isMobile ? scale * 14 : scale * 16
+        ctx.font = `${fontSize}px sans-serif`
         ctx.fillStyle = textColor
 
         let crossThrough = false

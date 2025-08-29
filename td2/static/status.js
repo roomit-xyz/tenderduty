@@ -64,6 +64,8 @@ function updateTable(status) {
         document.getElementById("statusTable").deleteRow(i-1)
     }
     const fade = `uk-animation-scale-up`
+    const isMobile = window.innerWidth <= 768
+    
     for (let i = 0; i < status.Status.length; i++) {
 
         let alerts = "&nbsp;"
@@ -121,17 +123,34 @@ function updateTable(status) {
 
         let r=document.getElementById('statusTable').insertRow(i)
         r.insertCell(0).innerHTML = `<div>${alerts}</div>`
-        r.insertCell(1).innerHTML = `<div>${_.escape(status.Status[i].name)} (${_.escape(status.Status[i].chain_id)})</div>`
-        r.insertCell(2).innerHTML = `<div class="${heightClass}" style="font-family: monospace; color: #6f6f6f; text-align: start">${_.escape(status.Status[i].height)}</div>`
+        
+        // Chain name - show shortened version on mobile
+        const chainDisplay = isMobile ? 
+            `<div>${_.escape(status.Status[i].name)}</div>` :
+            `<div>${_.escape(status.Status[i].name)} (${_.escape(status.Status[i].chain_id)})</div>`
+        r.insertCell(1).innerHTML = chainDisplay
+        
+        // Height - hide on mobile (class mobile-hide in CSS)
+        const heightCell = r.insertCell(2)
+        heightCell.className = isMobile ? 'mobile-hide' : ''
+        heightCell.innerHTML = `<div class="${heightClass}" style="font-family: monospace; color: #6f6f6f; text-align: start">${_.escape(status.Status[i].height)}</div>`
+        
+        // Moniker - truncate more aggressively on mobile
+        const monikerLength = isMobile ? 12 : 24
         if (status.Status[i].moniker === "not connected") {
             r.insertCell(3).innerHTML = `<div class="uk-text-warning">${_.escape(status.Status[i].moniker)}</div>`
             bonded = "unknown"
         } else {
-            r.insertCell(3).innerHTML = `<div class='uk-text-truncate'>${_.escape(status.Status[i].moniker.substring(0,24))}</div>`
+            r.insertCell(3).innerHTML = `<div class='uk-text-truncate'>${_.escape(status.Status[i].moniker.substring(0,monikerLength))}</div>`
         }
+        
         r.insertCell(4).innerHTML = `<div style="text-align: center">${bonded}</div>`
         r.insertCell(5).innerHTML = `<div uk-grid>${window}</div>`
-        r.insertCell(6).innerHTML = `<div class="uk-text-center">${nodes}</div>`
+        
+        // RPC Nodes - hide on mobile
+        const nodesCell = r.insertCell(6)
+        nodesCell.className = isMobile ? 'mobile-hide' : ''
+        nodesCell.innerHTML = `<div class="uk-text-center">${nodes}</div>`
     }
 }
 
