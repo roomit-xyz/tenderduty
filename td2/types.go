@@ -64,6 +64,8 @@ type Config struct {
 	Telegram TeleConfig `yaml:"telegram"`
 	// Slack webhook information
 	Slack SlackConfig `yaml:"slack"`
+	// Gotify notification information
+	Gotify GotifyConfig `yaml:"gotify"`
 	// Healthcheck information
 	Healthcheck HealthcheckConfig `yaml:"healthcheck"`
 
@@ -181,6 +183,8 @@ type AlertConfig struct {
 	Telegram TeleConfig `yaml:"telegram"`
 	// Slack webhook information
 	Slack SlackConfig `yaml:"slack"`
+	// Gotify webhook information
+	Gotify GotifyConfig `yaml:"gotify"`
 }
 
 // NodeConfig holds the basic information for a node to connect to.
@@ -222,6 +226,14 @@ type SlackConfig struct {
 	Enabled  bool     `yaml:"enabled"`
 	Webhook  string   `yaml:"webhook"`
 	Mentions []string `yaml:"mentions"`
+}
+
+// GotifyConfig holds the information needed to publish to a Gotify server for sending alerts
+type GotifyConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Server   string `yaml:"server"`
+	Token    string `yaml:"token"`
+	Priority int    `yaml:"priority"`
 }
 
 // HealthcheckConfig holds the information needed to send pings to a healthcheck endpoint
@@ -294,6 +306,11 @@ func validateConfig(c *Config) (fatal bool, problems []string) {
 			v.Alerts.Slack.Webhook = c.Slack.Webhook
 			v.Alerts.Slack.Mentions = c.Slack.Mentions
 		}
+		if v.Alerts.Gotify.Server == "" {
+			v.Alerts.Gotify.Server = c.Gotify.Server
+			v.Alerts.Gotify.Token = c.Gotify.Token
+			v.Alerts.Gotify.Priority = c.Gotify.Priority
+		}
 		if v.Alerts.Telegram.ApiKey == "" {
 			v.Alerts.Telegram.ApiKey = c.Telegram.ApiKey
 			v.Alerts.Telegram.Mentions = c.Telegram.Mentions
@@ -310,6 +327,9 @@ func validateConfig(c *Config) (fatal bool, problems []string) {
 		case v.Alerts.Slack.Enabled && !c.Slack.Enabled:
 			problems = append(problems, fmt.Sprintf("warn: %20s is configured for slack alerts, but it is not enabled", k))
 			fallthrough
+		case v.Alerts.Gotify.Enabled && !c.Gotify.Enabled:
+			problems = append(problems, fmt.Sprintf("warn: %20s is configured for gotify alerts, but it is not enabled", k))
+			fallthrough
 		case v.Alerts.Discord.Enabled && !c.Discord.Enabled:
 			problems = append(problems, fmt.Sprintf("warn: %20s is configured for discord alerts, but it is not enabled", k))
 			fallthrough
@@ -321,7 +341,7 @@ func validateConfig(c *Config) (fatal bool, problems []string) {
 		case !v.Alerts.ConsecutiveAlerts && !v.Alerts.PercentageAlerts && !v.Alerts.AlertIfInactive && !v.Alerts.AlertIfNoServers:
 			problems = append(problems, fmt.Sprintf("warn: %20s has no alert types configured", k))
 			fallthrough
-		case !v.Alerts.Pagerduty.Enabled && !v.Alerts.Discord.Enabled && !v.Alerts.Telegram.Enabled && !v.Alerts.Slack.Enabled:
+		case !v.Alerts.Pagerduty.Enabled && !v.Alerts.Discord.Enabled && !v.Alerts.Telegram.Enabled && !v.Alerts.Slack.Enabled && !v.Alerts.Gotify.Enabled:
 			problems = append(problems, fmt.Sprintf("warn: %20s has no notifications configured", k))
 		}
 		if td.EnableDash {
@@ -490,6 +510,7 @@ func loadConfig(yamlFile, stateFile, chainConfigDirectory string, password *stri
 		SentTgAlarms:  make(map[string]time.Time),
 		SentDiAlarms:  make(map[string]time.Time),
 		SentSlkAlarms: make(map[string]time.Time),
+		SentGtyAlarms: make(map[string]time.Time),
 		AllAlarms:     make(map[string]map[string]time.Time),
 		notifyMux:     sync.RWMutex{},
 	}
@@ -532,6 +553,10 @@ func loadConfig(yamlFile, stateFile, chainConfigDirectory string, password *stri
 		if saved.Alarms.SentSlkAlarms != nil {
 			alarms.SentSlkAlarms = saved.Alarms.SentSlkAlarms
 			clearStale(alarms.SentSlkAlarms, "Slack", c.Pagerduty.Enabled, staleHours)
+		}
+		if saved.Alarms.SentGtyAlarms != nil {
+			alarms.SentGtyAlarms = saved.Alarms.SentGtyAlarms
+			clearStale(alarms.SentGtyAlarms, "Gotify", c.Pagerduty.Enabled, staleHours)
 		}
 		if saved.Alarms.AllAlarms != nil {
 			alarms.AllAlarms = saved.Alarms.AllAlarms

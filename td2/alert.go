@@ -20,6 +20,7 @@ type alertMsg struct {
 	disc bool
 	tg   bool
 	slk  bool
+	gty  bool
 
 	severity string
 	resolved bool
@@ -37,6 +38,10 @@ type alertMsg struct {
 
 	slkHook     string
 	slkMentions string
+
+	gtyServer   string
+	gtyToken    string
+	gtyPriority int
 }
 
 type notifyDest uint8
@@ -46,6 +51,7 @@ const (
 	tg
 	di
 	slk
+	gty
 )
 
 type alarmCache struct {
@@ -53,6 +59,7 @@ type alarmCache struct {
 	SentTgAlarms   map[string]time.Time            `json:"sent_tg_alarms"`
 	SentDiAlarms   map[string]time.Time            `json:"sent_di_alarms"`
 	SentSlkAlarms  map[string]time.Time            `json:"sent_slk_alarms"`
+	SentGtyAlarms  map[string]time.Time            `json:"sent_gty_alarms"`
 	AllAlarms      map[string]map[string]time.Time `json:"sent_all_alarms"`
 	flappingAlarms map[string]map[string]time.Time
 	notifyMux      sync.RWMutex
@@ -95,6 +102,7 @@ var alarms = &alarmCache{
 	SentTgAlarms:   make(map[string]time.Time),
 	SentDiAlarms:   make(map[string]time.Time),
 	SentSlkAlarms:  make(map[string]time.Time),
+	SentGtyAlarms:  make(map[string]time.Time),
 	AllAlarms:      make(map[string]map[string]time.Time),
 	flappingAlarms: make(map[string]map[string]time.Time),
 	notifyMux:      sync.RWMutex{},
@@ -121,6 +129,9 @@ func shouldNotify(msg *alertMsg, dest notifyDest) bool {
 	case slk:
 		whichMap = alarms.SentSlkAlarms
 		service = "Slack"
+	case gty:
+		whichMap = alarms.SentGtyAlarms
+		service = "Gotify"
 	}
 
 	switch {
@@ -182,6 +193,70 @@ func notifySlack(msg *alertMsg) (err error) {
 	}
 
 	return
+}
+
+func notifyGotify(msg *alertMsg) (err error) {
+	if !msg.gty {
+		return
+	}
+	if !shouldNotify(msg, gty) {
+		return nil
+	}
+
+	data, err := json.Marshal(buildGotifyMessage(msg))
+	if err != nil {
+		return
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/message?token=%s", msg.gtyServer, msg.gtyToken), bytes.NewBuffer(data))
+	if err != nil {
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("could not notify gotify for %s got %d response", msg.chain, resp.StatusCode)
+	}
+
+	return
+}
+
+type GotifyMessage struct {
+	Message  string                 `json:"message"`
+	Title    string                 `json:"title,omitempty"`
+	Priority int                    `json:"priority,omitempty"`
+	Extras   map[string]interface{} `json:"extras,omitempty"`
+}
+
+func buildGotifyMessage(msg *alertMsg) *GotifyMessage {
+	title := "🚨 TenderDuty Alert: " + msg.chain
+	if msg.resolved {
+		title = "💜 TenderDuty Resolved: " + msg.chain
+	}
+	
+	priority := msg.gtyPriority
+	if priority == 0 {
+		priority = 5 // default priority
+	}
+
+	return &GotifyMessage{
+		Message:  msg.message,
+		Title:    title,
+		Priority: priority,
+		Extras: map[string]interface{}{
+			"chain":    msg.chain,
+			"resolved": msg.resolved,
+			"severity": msg.severity,
+		},
+	}
 }
 
 type SlackMessage struct {
@@ -363,6 +438,7 @@ func (c *Config) alert(chainName, message, severity string, resolved bool, id *s
 		disc:         c.Discord.Enabled && c.Chains[chainName].Alerts.Discord.Enabled,
 		tg:           c.Telegram.Enabled && c.Chains[chainName].Alerts.Telegram.Enabled,
 		slk:          c.Slack.Enabled && c.Chains[chainName].Alerts.Slack.Enabled,
+		gty:          c.Gotify.Enabled && c.Chains[chainName].Alerts.Gotify.Enabled,
 		severity:     severity,
 		resolved:     resolved,
 		chain:        chainName,
@@ -375,6 +451,9 @@ func (c *Config) alert(chainName, message, severity string, resolved bool, id *s
 		discHook:     c.Chains[chainName].Alerts.Discord.Webhook,
 		discMentions: strings.Join(c.Chains[chainName].Alerts.Discord.Mentions, " "),
 		slkHook:      c.Chains[chainName].Alerts.Slack.Webhook,
+		gtyServer:    c.Chains[chainName].Alerts.Gotify.Server,
+		gtyToken:     c.Chains[chainName].Alerts.Gotify.Token,
+		gtyPriority:  c.Chains[chainName].Alerts.Gotify.Priority,
 	}
 	c.alertChan <- a
 	c.chainsMux.RUnlock()

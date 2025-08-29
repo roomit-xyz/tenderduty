@@ -53,6 +53,10 @@ func Run(configFile, stateFile, chainConfigDirectory string, password *string) e
 					if e != nil {
 						l(msg.chain, "error sending alert to slack", e.Error())
 					}
+					e = notifyGotify(msg)
+					if e != nil {
+						l(msg.chain, "error sending alert to gotify", e.Error())
+					}
 				}(alert)
 			case <-td.ctx.Done():
 				return
