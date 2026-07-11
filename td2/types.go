@@ -113,6 +113,12 @@ type ChainConfig struct {
 	ValAddress string `yaml:"valoper_address"`
 	// ValconsOverride allows skipping the lookup of the consensus public key and setting it directly.
 	ValconsOverride string `yaml:"valcons_override"`
+	// Gno.land provider fields
+	ChainType string `yaml:"chain_type"`
+	GnoValopersRealm string `yaml:"gno_valopers_realm"`
+	gnoRpcEndpoint string
+	gnoConsensusAddr string
+
 	// ExtraInfo will be appended to the alert data. This is useful for pagerduty because multiple tenderduty instances
 	// can be pointed at pagerduty and duplicate alerts will be filtered by using a key. The first alert will win, this
 	// can be useful for knowing what tenderduty instance sent the alert.

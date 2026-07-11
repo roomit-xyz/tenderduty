@@ -30,6 +30,11 @@ type ValInfo struct {
 
 // GetValInfo the first bool is used to determine if extra information about the validator should be printed.
 func (cc *ChainConfig) GetValInfo(first bool) (err error) {
+	// Gno.land provider dispatch
+	if strings.ToLower(cc.ChainType) == "gno" {
+		return cc.GnoGetValInfo(first)
+	}
+
 	if cc.client == nil {
 		return errors.New("nil rpc client")
 	}

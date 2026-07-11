@@ -1,11 +1,10 @@
 # 1st stage, build app
-FROM golang:1.19 as builder
-RUN apt-get update && apt-get -y upgrade && apt-get install -y upx
+FROM golang:1.19-alpine as builder
+RUN apk add --no-cache git gcc libc-dev
 COPY . /build/app
 WORKDIR /build/app
 
 RUN go get ./... && go build -ldflags "-s -w" -trimpath -o tenderduty main.go
-RUN upx tenderduty && upx -t tenderduty
 
 # 2nd stage, create a user to copy, and install libraries needed if connecting to upstream TLS server
 # we don't want the /lib and /lib64 from the go container cause it has more than we need.
@@ -16,7 +15,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get install -y ca-certificates &
 
 # 3rd and final stage, copy the minimum parts into a scratch container, is a smaller and more secure build. This pulls
 # in SSL libraries and CAs so Go can connect to TLS servers.
-FROM scratch
+FROM alpine:latest
 COPY --from=ssl /etc/ca-certificates /etc/ca-certificates
 COPY --from=ssl /etc/ssl /etc/ssl
 COPY --from=ssl /usr/share/ca-certificates /usr/share/ca-certificates

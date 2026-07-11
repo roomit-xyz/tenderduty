@@ -70,6 +70,12 @@ func (wsr WsReply) Value() []byte {
 // WsRun is our main entrypoint for the websocket listener. In the Run loop it will block, and if it exits force a
 // renegotiation for a new client.
 func (cc *ChainConfig) WsRun() {
+	// Gno.land provider uses polling instead of WebSocket
+	if strings.ToLower(cc.ChainType) == "gno" {
+		cc.PollRun()
+		return
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var err error
