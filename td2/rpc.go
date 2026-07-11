@@ -221,8 +221,9 @@ func (cc *ChainConfig) monitorHealth(ctx context.Context, chainName string) {
 		_ = cc.newRpc()
 	}
 
-	// Gno chains are polled by PollRun, skip health monitor entirely
+	// Gno chains: use lightweight health + bonded checker (no vm/qeval)
 	if strings.ToLower(cc.ChainType) == "gno" {
+		cc.monitorGnoHealth(chainName)
 		return
 	}
 
@@ -237,7 +238,6 @@ func (cc *ChainConfig) monitorHealth(ctx context.Context, chainName string) {
 					alert := func(msg string) {
 						node.lastMsg = fmt.Sprintf("%-12s node %s is %s", chainName, node.Url, msg)
 						if !node.AlertIfDown {
-							// even if we aren't alerting, we want to display the status in the dashboard.
 							node.down = true
 							return
 						}
@@ -264,7 +264,6 @@ func (cc *ChainConfig) monitorHealth(ctx context.Context, chainName string) {
 						node.syncing = true
 						return
 					}
-					// node's OK, clear the note
 					if node.down {
 						node.lastMsg = ""
 						node.wasDown = true
@@ -283,6 +282,84 @@ func (cc *ChainConfig) monitorHealth(ctx context.Context, chainName string) {
 				if e != nil {
 					l("❓ refreshing signing info for", cc.ValAddress, e)
 				}
+			}
+		}
+	}
+}
+
+// monitorGnoHealth is a lightweight health + bonded checker for Gno chains.
+// Checks node health via /status and validator active set via /validators.
+// Does NOT call vm/qeval (avoids false "node is down" from VM panics).
+func (cc *ChainConfig) monitorGnoHealth(chainName string) {
+	tick := time.NewTicker(time.Minute)
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-td.ctx.Done():
+			return
+
+		case <-tick.C:
+			// Check node health via /status
+			for _, node := range cc.Nodes {
+				go func(node *NodeConfig) {
+					alert := func(msg string) {
+						node.lastMsg = fmt.Sprintf("%-12s node %s is %s", chainName, node.Url, msg)
+						if !node.AlertIfDown {
+							node.down = true
+							return
+						}
+						if !node.down {
+							node.down = true
+							node.downSince = time.Now()
+						}
+						if td.Prom {
+							td.statsChan <- cc.mkUpdate(metricNodeDownSeconds, time.Since(node.downSince).Seconds(), node.Url)
+						}
+						l("⚠️ " + node.lastMsg)
+					}
+
+					chainID, _, catchingUp, err := GnoGetStatus(node.Url)
+					if err != nil {
+						alert(err.Error())
+						return
+					}
+					if chainID != cc.ChainId {
+						alert("on the wrong network")
+						return
+					}
+					if catchingUp {
+						alert("not synced")
+						node.syncing = true
+						return
+					}
+
+					if node.down {
+						node.lastMsg = ""
+						node.wasDown = true
+					}
+					td.statsChan <- cc.mkUpdate(metricNodeDownSeconds, 0, node.Url)
+					node.down = false
+					node.syncing = false
+					node.downSince = time.Unix(0, 0)
+					cc.noNodes = false
+
+					// Sync gnoRpcEndpoint if PollRun is pointing somewhere else
+					if cc.gnoRpcEndpoint == "" {
+						cc.gnoRpcEndpoint = node.Url
+						l(fmt.Sprintf("⚙️ %-12s gnoRpcEndpoint set to %s from health check", chainName, node.Url))
+					}
+				}(node)
+			}
+
+			// Check validator active set via /validators (no vm/qeval)
+			rpcURL := cc.gnoRPCUrl()
+			if rpcURL == "" {
+				continue
+			}
+			bonded, err := GnoIsValidatorActive(rpcURL, cc.ValAddress)
+			if err == nil && cc.valInfo != nil {
+				cc.valInfo.Bonded = bonded
 			}
 		}
 	}
@@ -315,6 +392,5 @@ var endpointRex = regexp.MustCompile(`//([^/:]+)(:\d+)?`)
 
 // guessPublicEndpoint tries to determine the correct proxy endpoint from a registry entry.
 func guessPublicEndpoint(registryEntry string) string {
-	// ... (omitted for brevity, but this function is already in the original tenderduty code)
 	return ""
 }

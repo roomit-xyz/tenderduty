@@ -28,7 +28,8 @@ type pollBlockResult struct {
 	} `json:"result"`
 }
 
-// PollRun polls /block every 5 seconds for Gno.land (TM2) chains that don't support WS subscriptions.
+// PollRun polls /block every 5 seconds for Gno.land (TM2) chains.
+// Features auto-failover: if 3 requests fail in a row, tries backup nodes.
 func (cc *ChainConfig) PollRun() {
 	started := time.Now()
 	for {
@@ -55,6 +56,8 @@ func (cc *ChainConfig) PollRun() {
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
 
+	failCount := 0
+
 	for {
 		select {
 		case <-tick.C:
@@ -62,6 +65,33 @@ func (cc *ChainConfig) PollRun() {
 			client := &http.Client{Timeout: 10 * time.Second}
 			resp, err := client.Get(url)
 			if err != nil {
+				failCount++
+				l(fmt.Sprintf("⚠️ %-12s poll error #%d: %s", cc.ChainId, failCount, err))
+
+				// Auto-failover: after 3 consecutive failures, try next node
+				if failCount >= 3 {
+					l(fmt.Sprintf("🔄 %-12s too many poll failures, trying failover", cc.ChainId))
+					for _, node := range cc.Nodes {
+						if node.Url == cc.gnoRpcEndpoint {
+							// Mark current node as down
+							if !node.down {
+								node.down = true
+								node.downSince = time.Now()
+							}
+							break
+						}
+					}
+					// Find next healthy node
+					err := cc.newGnoRpc()
+					if err != nil {
+						l(fmt.Sprintf("🛑 %-12s failover failed, no working endpoints: %s", cc.ChainId, err))
+						return
+					}
+					l(fmt.Sprintf("✅ %-12s failover to %s", cc.ChainId, cc.gnoRpcEndpoint))
+					failCount = 0
+					noBlockSince = time.Now()
+				}
+
 				if time.Since(noBlockSince) > 2*time.Minute {
 					l("🛑", cc.ChainId, "no blocks for 2 min, exiting")
 					return
@@ -70,6 +100,7 @@ func (cc *ChainConfig) PollRun() {
 			}
 			body, _ := io.ReadAll(resp.Body)
 			resp.Body.Close()
+			failCount = 0
 
 			var br pollBlockResult
 			if err := json.Unmarshal(body, &br); err != nil {
