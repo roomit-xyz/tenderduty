@@ -5,57 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TenderDuty v2</title>
 <style>
-:root{--bg:#0F172A;--surface:#1E293B;--surface2:#334155;--text:#F8FAFC;--text2:#94A3B8;--text3:#64748B;--green:#10B981;--green-glow:#10B98140;--amber:#F59E0B;--red:#EF4444;--blue:#3B82F6;--radius:10px}
+:root{--bg:#0F172A;--surface:#1E293B;--surface2:#334155;--text:#F8FAFC;--text2:#94A3B8;--text3:#64748B;--green:#10B981;--green-glow:#10B98140;--red:#EF4444;--red-glow:#EF444440;--blue:#3B82F6;--blue-glow:#3B82F640}
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px;margin:0}
 .container{max-width:1500px;margin:0 auto}
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.header h1{font-size:1.4rem;font-weight:700}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.header h1{font-size:1.5rem;font-weight:700}
 .header h1 span{color:var(--green)}
 .status-pill{display:flex;align-items:center;gap:8px;background:var(--surface);padding:6px 14px;border-radius:100px;font-size:0.75rem}
 .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
-.stat-card{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--surface2)}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:8px;padding:16px;border:1px solid var(--surface2)}
 .stat-card .label{font-size:0.65rem;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
 .stat-card .value{font-size:1.4rem;font-weight:700}
-.stat-card .value.green{color:var(--green)}.stat-card .value.amber{color:var(--amber)}.stat-card .value.red{color:var(--red)}
-.legend-bar{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;background:var(--surface);border-radius:var(--radius);padding:8px 16px;border:1px solid var(--surface2);font-size:0.7rem;color:var(--text2);align-items:center}
-.legend-dot{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
-.legend-dot.signed{background:var(--green)}.legend-dot.proposed{background:var(--blue)}.legend-dot.missed{background:var(--red)}.legend-dot.none{background:var(--surface2)}
-.main-grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+.stat-card .value.green{color:var(--green)}.stat-card .value.red{color:var(--red)}
+.legend-bar{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;background:var(--surface);border-radius:8px;padding:10px 16px;border:1px solid var(--surface2);font-size:0.7rem;color:var(--text2);align-items:center}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.legend-dot.signed{background:var(--green)}.legend-dot.proposed{background:var(--blue)}.legend-dot.missed{background:var(--red)}
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
 .chains-list{display:flex;flex-direction:column;gap:6px}
-.chain-row{background:var(--surface);border-radius:var(--radius);padding:10px 18px;border:1px solid var(--surface2);display:flex;align-items:center;justify-content:space-between;transition:all .2s}
-.chain-row:hover{border-color:var(--green);box-shadow:0 0 10px var(--green-glow)}
-.chain-row.critical:hover{border-color:var(--red);box-shadow:0 0 10px rgba(239,68,68,0.3)}
-.chain-row::before{content:"";position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--green);border-radius:10px 0 0 10px}
-.chain-row.warning::before{background:var(--amber)}.chain-row.critical::before{background:var(--red)}
+.chain-row{background:var(--surface);border-radius:8px;padding:12px 18px;border:1px solid var(--surface2);display:flex;align-items:center;justify-content:space-between;transition:all .2s;position:relative;overflow:hidden}
+.chain-row:hover{border-color:var(--green);box-shadow:0 0 12px var(--green-glow)}
+.chain-row::before{content:"";position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--green)}
+.chain-row.warning::before{background:#F59E0B}.chain-row.critical::before{background:var(--red)}
 .row-left{display:flex;align-items:center;gap:16px;min-width:0}
 .row-name{font-size:0.95rem;font-weight:600;min-width:150px}
 .row-status{font-size:0.65rem;padding:2px 8px;border-radius:100px;text-transform:uppercase;font-weight:700}
-.row-status.healthy{background:#10B98120;color:var(--green)}.row-status.warning{background:#F59E0B20;color:var(--amber)}.row-status.critical{background:#EF444420;color:var(--red)}
-.row-meta{display:flex;align-items:center;gap:14px;color:var(--text2);font-size:0.78rem}
-.meta-item{display:flex;gap:4px;align-items:center}
-.meta-item .label{font-size:0.62rem;color:var(--text3);text-transform:uppercase}
-.meta-item .value{font-weight:500}
-.meta-item .value.highlight{color:var(--text)}
-.row-right{display:flex;align-items:center;gap:12px}
-.blocks-row{display:flex;gap:2px;align-items:center}
+.row-status.healthy{background:#10B98120;color:var(--green)}.row-status.critical{background:#EF444420;color:var(--red)}
+.row-meta{display:flex;gap:14px;color:var(--text2);font-size:0.78rem}
+.meta-item{display:flex;gap:4px}
+.meta-item .label{font-size:0.62rem;color:var(--text3)}
+.row-right{display:flex;gap:12px}
+.blocks-row{display:flex;gap:2px}
 .block{width:8px;height:18px;border-radius:2px;background:var(--surface2);transition:all .25s}
 .block.signed{background:var(--green);animation:blockGlow 3s ease-in-out infinite}
 .block.missed{background:var(--red)}
-.block.proposed{background:var(--blue);animation:blockPulse 2s ease-in-out infinite}
-.block:hover{transform:scaleY(1.5)}
+.block.proposed{background:var(--blue)}
+@media(max-width:768px){  .main-grid{grid-template-columns:1fr}  .stats-bar{grid-template-columns:repeat(2,1fr)}  .chain-row{flex-direction:column;align-items:flex-start;gap:8px}  .row-left{flex-wrap:wrap}  .row-name{min-width:auto;font-size:0.85rem}  .row-meta{font-size:0.7rem;gap:8px}  .blocks-row{gap:1px}  .block{width:5px;height:12px}  .log-panel{max-height:300px}  .header h1{font-size:1rem}  .stat-card{padding:10px}  .stat-card .value{font-size:1.1rem}  .status-pill{font-size:0.65rem}}
 @keyframes blockGlow{0%,100%{box-shadow:0 0 3px var(--green-glow)}50%{box-shadow:0 0 9px var(--green-glow)}}
-@keyframes blockPulse{0%,100%{box-shadow:0 0 3px rgba(59,130,246,0.3)}50%{box-shadow:0 0 8px rgba(59,130,246,0.3)}}
-.sidebar{display:flex;flex-direction:column;gap:14px}
-.log-panel{background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2);padding:14px;max-height:500px;display:flex;flex-direction:column}
-.log-panel h3{font-size:0.78rem;font-weight:600;margin-bottom:8px;color:var(--text2)}
-.log-list-scroll{flex:1;overflow-y:auto;min-height:300px}
-.log-list{display:flex;flex-direction:column;gap:3px;font-size:0.66rem;font-family:monospace}
-.log-item{padding:4px 7px;background:var(--surface2);border-radius:3px;border-left:3px solid var(--text3);line-height:1.3;word-break:break-all;color:var(--text2)}
-.log-item.info{border-left-color:var(--blue)}.log-item.ok{border-left-color:var(--green)}.log-item.warn{border-left-color:var(--amber)}.log-item.error{border-left-color:var(--red)}
-.footer{margin-top:24px;text-align:center;font-size:0.65rem;color:var(--text3)}
-@media(max-width:1024px){.main-grid{grid-template-columns:1fr}}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.log-panel{background:var(--surface);border-radius:8px;border:1px solid var(--surface2);padding:16px;max-height:550px;display:flex;flex-direction:column}
+.log-panel h3{font-size:0.8rem;font-weight:600;margin-bottom:10px;color:var(--text2)}
+.log-scroll{flex:1;overflow-y:auto;min-height:350px}
+.log-list{display:flex;flex-direction:column;gap:4px;font-size:0.66rem;font-family:monospace}
+.log-item{padding:5px 8px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--text3);line-height:1.35;word-break:break-all;color:var(--text2)}
+.log-item.info{border-left-color:var(--blue)}.log-item.ok{border-left-color:var(--green)}.log-item.warn{border-left-color:#F59E0B}.log-item.error{border-left-color:var(--red)}
+.footer{margin-top:28px;text-align:center;font-size:0.65rem;color:var(--text3)}
 </style>
 </head>
 <body>
@@ -67,82 +62,88 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 <div class="stats-bar">
   <div class="stat-card"><div class="label">Chains</div><div class="value" id="total-chains">0</div></div>
   <div class="stat-card"><div class="label">Healthy</div><div class="value green" id="healthy-count">0</div></div>
-  <div class="stat-card"><div class="label">Warning</div><div class="value amber" id="warning-count">0</div></div>
+  <div class="stat-card"><div class="label">Warning</div><div class="value" id="warning-count">0</div></div>
   <div class="stat-card"><div class="label">Critical</div><div class="value red" id="critical-count">0</div></div>
 </div>
 <div class="legend-bar">
-  <span class="legend-dot signed"></span>Signed <span class="legend-dot proposed"></span>Proposed <span class="legend-dot missed"></span>Missed <span class="legend-dot none"></span>None
+  <span class="legend-dot signed"></span>Signed <span class="legend-dot proposed"></span>Proposed <span class="legend-dot missed"></span>Missed <span class="legend-dot" style="background:var(--surface2)"></span>None
 </div>
 <div class="main-grid">
   <div class="chains-list" id="chains-grid"></div>
   <div class="sidebar">
     <div class="log-panel">
       <h3>📋 Live Logs</h3>
-      <div class="log-list-scroll"><div class="log-list" id="logs-list"></div></div>
+      <div class="log-scroll"><div class="log-list" id="logs-list"></div></div>
     </div>
   </div>
 </div>
 </div>
 <div class="footer">TenderDuty v2 · Roomit</div>
+
 <script>
-const H=location.hostname;
 const v=(o,k)=>o[k]??o[k.toLowerCase()];
-let chains={},lastLogTs=0;
-function addLog(msg,lvl,ts){
-  const el=document.getElementById('logs-list'),
-  d=document.createElement('div');
-  d.className='log-item '+(lvl||'info');
-  d.innerHTML='<span style="color:var(--text3);font-size:0.6rem">'+(ts?new Date(ts*1000).toLocaleTimeString():new Date().toLocaleTimeString())+'</span> '+msg;
+let chains={}, lastLogTs=0;
+
+function addLog(msg,level,ts){
+  const el=document.getElementById('logs-list');
+  const d=document.createElement('div');
+  d.className='log-item '+(level||'info');
+  const t=ts?new Date(ts*1000).toLocaleTimeString():new Date().toLocaleTimeString();
+  d.innerHTML='<span style="color:var(--text3);font-size:0.6rem">'+t+'</span> '+msg;
   el.insertBefore(d,el.firstChild);
   if(el.children.length>100)el.removeChild(el.lastChild);
 }
+
 function render(){
   const list=Object.values(chains).sort((a,b)=>(v(a,'Name')||'').localeCompare(v(b,'Name')||''));
   let h=0,w=0,c=0;
-  if(!list.length){document.getElementById('chains-grid').innerHTML='<div style="color:var(--text3);padding:20px">Waiting...</div>';return;}
+  if(!list.length){document.getElementById('chains-grid').innerHTML='<div style="color:var(--text3)">Waiting...</div>';return;}
   document.getElementById('chains-grid').innerHTML=list.map(ch=>{
-    const st=(v(ch,'LastError')||(v(ch,'HealthyNodes')===0))?'critical':((v(ch,'Missed')||0)>2?'warning':'healthy');
+    const missed=v(ch,'Missed')||0;
+    const st=missed>2?'warning':(v(ch,'LastError')?'critical':'healthy');
     if(st==='healthy')h++;else if(st==='warning')w++;else c++;
     const blocks=(v(ch,'Blocks')||[]).slice(-50).map(b=>{
-      const cls={0:'missed',1:'none',2:'none',3:'signed',4:'proposed'}[b]||'none';
+      const cls=['missed','none','none','signed','proposed'][b]||'none';
       return '<div class="block '+cls+'"></div>';
     }).join('');
-    return '<div class="chain-row '+st+'"><div class="row-left"><div class="row-name">'+(v(ch,'Name')||'?')+'</div><div class="row-status '+st+'">'+st.toUpperCase()+'</div><div class="row-meta"><div class="meta-item"><span class="label">Height</span><span class="value highlight">'+Number(v(ch,'Height')).toLocaleString()+'</span></div><div class="meta-item"><span class="label">Missed</span><span class="value">'+(v(ch,'Missed')||0)+'/'+(v(ch,'Window')||'?')+'</span></div></div></div><div class="row-right"><div class="blocks-row">'+blocks+'</div></div></div>';
+    return '<div class="chain-row '+st+'"><div class="row-left"><div class="row-name">'+v(ch,'Name')+'</div><div class="row-status '+st+'">'+st.toUpperCase()+'</div><div class="row-meta"><div class="meta-item"><span class="label">Height</span><span>'+v(ch,'Height')+'</span></div><div class="meta-item"><span class="label">Missed</span><span>'+missed+'/'+v(ch,'Window')+'</span></div></div></div><div class="row-right"><div class="blocks-row">'+blocks+'</div></div></div>';
   }).join('');
   document.getElementById('total-chains').textContent=list.length;
   document.getElementById('healthy-count').textContent=h;
   document.getElementById('warning-count').textContent=w;
   document.getElementById('critical-count').textContent=c;
 }
+
 function updateData(d){
   const s=v(d,'Status')||(Array.isArray(d)?d:[]);
+  if(!Array.isArray(s))return;
   s.forEach(c=>{const n=v(c,'Name');if(n)chains[n]=c;});
   render();
 }
-fetch('http://'+H+':8888/state').then(r=>r.json()).then(updateData).catch(()=>{});
-function pollLogs(){
-  fetch('http://'+H+':8888/logs').then(r=>r.json()).then(arr=>{
-    const fresh=arr.filter(x=>(v(x,'ts')||0)>lastLogTs);
-    fresh.reverse().forEach(x=>{
-      const msg=v(x,'msg')||'',ts=v(x,'ts');
+
+fetch('/state').then(r=>r.json()).then(d=>{updateData(d);addLog('State loaded','ok');}).catch(e=>addLog('Fetch /state: '+e.message,'error'));
+
+setInterval(()=>{
+  fetch('/logs').then(r=>r.json()).then(arr=>{
+    if(!Array.isArray(arr)||!arr.length)return;
+    arr.forEach(x=>{
+      const msg=v(x,'msg')||v(x,'Msg')||'';
+      const ts=v(x,'ts')||v(x,'Ts')||0;
       if(msg&&ts>lastLogTs){lastLogTs=ts;addLog(msg,msg.includes('❌')?'error':msg.includes('not synced')?'warn':'info',ts);}
     });
   }).catch(()=>{});
-}
-setInterval(pollLogs,4000);
-function wsConnect(){
-  const ws=new WebSocket('ws://'+H+':8888/ws');
-  ws.onopen=()=>document.getElementById('ws-status').textContent='Live';
-  ws.onmessage=(e)=>{
-    try{
-      const d=JSON.parse(e.data);
-      if(d.msgType==='update')updateData(d);
-      else if(d.msg||d.Msg){const m=d.msg||d.Msg;addLog(m,m.includes('❌')?'error':'info',d.ts||d.Ts);}
-    }catch(_){}
-  };
-  ws.onclose=()=>setTimeout(wsConnect,3000);
-}
-wsConnect();
+},3000);
+
+const ws=new WebSocket('' + (location.protocol==='https:'?'wss://':'ws://')+location.hostname+'/ws');
+ws.onopen=()=>{document.getElementById('ws-status').textContent='Live';addLog('WebSocket connected','ok');};
+ws.onmessage=(e)=>{
+  try{
+    const d=JSON.parse(e.data);
+    if(v(d,'msgType')==='update')updateData(d);
+    else if(v(d,'msg')||v(d,'Msg')){const m=v(d,'msg')||v(d,'Msg');addLog(m,m.includes('❌')?'error':'info',v(d,'ts')||v(d,'Ts'));}
+  }catch(_){addLog('WS parse error','error');}
+};
+ws.onclose=()=>{document.getElementById('ws-status').textContent='Reconnecting';setTimeout(()=>ws=new WebSocket('' + (location.protocol==='https:'?'wss://':'ws://')+location.hostname+'/ws'),3000);};
 </script>
 </body>
 </html>
