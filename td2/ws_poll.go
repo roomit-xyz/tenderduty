@@ -23,13 +23,15 @@ type pollBlockResult struct {
 				Precommits []struct {
 					ValidatorAddress string `json:"validator_address"`
 				} `json:"precommits"`
+				Signatures []struct {
+					ValidatorAddress string `json:"validator_address"`
+				} `json:"signatures"`
 			} `json:"last_commit"`
 		} `json:"block"`
 	} `json:"result"`
 }
 
 // PollRun polls /block every 5 seconds for Gno.land (TM2) chains.
-// Features auto-failover: if 3 requests fail in a row, tries backup nodes.
 func (cc *ChainConfig) PollRun() {
 	started := time.Now()
 	for {
@@ -68,12 +70,10 @@ func (cc *ChainConfig) PollRun() {
 				failCount++
 				l(fmt.Sprintf("⚠️ %-12s poll error #%d: %s", cc.ChainId, failCount, err))
 
-				// Auto-failover: after 3 consecutive failures, try next node
 				if failCount >= 3 {
 					l(fmt.Sprintf("🔄 %-12s too many poll failures, trying failover", cc.ChainId))
 					for _, node := range cc.Nodes {
 						if node.Url == cc.gnoRpcEndpoint {
-							// Mark current node as down
 							if !node.down {
 								node.down = true
 								node.downSince = time.Now()
@@ -81,7 +81,6 @@ func (cc *ChainConfig) PollRun() {
 							break
 						}
 					}
-					// Find next healthy node
 					err := cc.newGnoRpc()
 					if err != nil {
 						l(fmt.Sprintf("🛑 %-12s failover failed, no working endpoints: %s", cc.ChainId, err))
@@ -115,19 +114,37 @@ func (cc *ChainConfig) PollRun() {
 			noBlockSince = time.Now()
 			lastHeight = height
 
-			// Determine signing status
+			// ================= FLAG-BASED SIGNING LOGIC =================
 			var signState StatusType = Statusmissed
 			addrLower := strings.ToLower(valAddr)
+			chainLower := strings.ToLower(cc.name)
+
 			if strings.ToLower(br.Result.Block.Header.ProposerAddress) == addrLower {
 				signState = StatusProposed
 			} else {
-				for _, sig := range br.Result.Block.LastCommit.Precommits {
-					if strings.ToLower(sig.ValidatorAddress) == addrLower {
-						signState = StatusSigned
-						break
+				if strings.Contains(chainLower, "atomone") {
+					// PATH 1: ATOMONE (Try Precommits, then Signatures)
+					sigs := br.Result.Block.LastCommit.Precommits
+					if len(sigs) == 0 {
+						sigs = br.Result.Block.LastCommit.Signatures
+					}
+					for _, sig := range sigs {
+						if strings.ToLower(sig.ValidatorAddress) == addrLower {
+							signState = StatusSigned
+							break
+						}
+					}
+				} else {
+					// PATH 2 & 3: GNO & GENERAL (Precommits only)
+					for _, sig := range br.Result.Block.LastCommit.Precommits {
+						if strings.ToLower(sig.ValidatorAddress) == addrLower {
+							signState = StatusSigned
+							break
+						}
 					}
 				}
 			}
+			// ===========================================================
 
 			if height%20 == 0 {
 				l(fmt.Sprintf("🧊 %-12s block %d", cc.ChainId, height))
