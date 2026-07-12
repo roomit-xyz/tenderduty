@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderDuty — Validator Monitor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0F172A;--surface:#1E293B;--surface2:#334155;--text:#F8FAFC;--text2:#94A3B8;--text3:#64748B;--green:#10B981;--green-glow:#10B98140;--amber:#F59E0B;--amber-glow:#F59E0B40;--red:#EF4444;--red-glow:#EF444440;--blue:#3B82F6;--radius:16px}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px}
+.container{max-width:1400px;margin:0 auto}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:1.6rem;font-weight:700}
+.header h1 span{color:var(--green)}
+.status-pill{display:flex;align-items:center;gap:8px;background:var(--surface);padding:8px 16px;border-radius:100px;font-size:0.8rem}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--green-glow)}50%{box-shadow:0 0 0 8px transparent}}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:1px solid var(--surface2)}
+.stat-card .label{font-size:0.7rem;color:var(--text3);text-transform:uppercase;margin-bottom:6px}
+.stat-card .value{font-size:1.6rem;font-weight:700}
+.stat-card .value.green{color:var(--green)}.stat-card .value.amber{color:var(--amber)}.stat-card .value.red{color:var(--red)}
+.main-grid{display:grid;grid-template-columns:1fr 300px;gap:20px}
+.chains-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.chain-card{background:var(--surface);border-radius:var(--radius);padding:22px;border:1px solid var(--surface2);position:relative;overflow:hidden;transition:all .2s}
+.chain-card:hover{border-color:var(--green);box-shadow:0 0 20px var(--green-glow)}
+.chain-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)}
+.chain-card.warning::before{background:var(--amber)}.chain-card.critical::before{background:var(--red)}
+.chain-header{display:flex;justify-content:space-between;margin-bottom:14px}
+.chain-name{font-size:1.05rem;font-weight:600}
+.chain-status{font-size:0.75rem;padding:3px 10px;border-radius:100px}
+.chain-status.healthy{background:#10B98120;color:var(--green)}
+.chain-status.warning{background:#F59E0B20;color:var(--amber)}
+.chain-status.critical{background:#EF444420;color:var(--red)}
+.chain-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.meta-item .label{font-size:0.68rem;color:var(--text3);text-transform:uppercase}
+.meta-item .value{font-size:0.85rem;font-weight:500;color:var(--text2)}
+.meta-item .value.highlight{color:var(--text)}
+.blocks-container{margin-top:14px}
+.blocks-label{font-size:0.68rem;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.blocks-row{display:flex;gap:2px;flex-wrap:wrap}
+.block{width:10px;height:22px;border-radius:3px;background:var(--surface2);transition:all .25s}
+.block.signed{background:var(--green);border-color:var(--green);animation:blockGlow 2s ease-in-out infinite}
+.block.missed{background:var(--red)}
+.block.proposed{background:var(--blue)}
+@keyframes blockGlow{0%,100%{box-shadow:0 0 6px var(--green-glow)}50%{box-shadow:0 0 14px var(--green-glow)}}
+.sidebar{display:flex;flex-direction:column;gap:18px}
+.log-panel{background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2);padding:18px;max-height:500px;display:flex;flex-direction:column}
+.log-panel h3{font-size:0.85rem;font-weight:600;margin-bottom:12px;color:var(--text2)}
+.log-list{display:flex;flex-direction:column-reverse;gap:6px;flex:1;overflow-y:auto;font-size:0.72rem}
+.log-item{padding:6px 8px;background:var(--surface2);border-radius:5px;border-left:2px solid var(--text3)}
+.log-item.info{border-left-color:var(--blue)}.log-item.warn{border-left-color:var(--amber)}.log-item.error{border-left-color:var(--red)}.log-item.ok{border-left-color:var(--green)}
+.footer{margin-top:32px;text-align:center;font-size:0.72rem;color:var(--text3);padding:16px}
+@media(max-width:1024px){.main-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>Tender<span>Duty</span> <small style="font-size:0.65rem;color:var(--text3);font-weight:400">v2</small></h1>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    <span id="ws-status">Connecting</span>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="label">Chains</div><div class="value" id="total-chains">0</div></div>
+  <div class="stat-card"><div class="label">Healthy</div><div class="value green" id="healthy-count">0</div></div>
+  <div class="stat-card"><div class="label">Warning</div><div class="value amber" id="warning-count">0</div></div>
+  <div class="stat-card"><div class="label">Critical</div><div class="value red" id="critical-count">0</div></div>
+</div>
+
+<div class="main-grid">
+  <div class="chains-grid" id="chains-grid"></div>
+  <div class="sidebar">
+    <div class="log-panel">
+      <h3>📋 Logs</h3>
+      <div class="log-list" id="logs-list"><div class="log-item ok">Ready</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="footer">TenderDuty v2 • Roomit • <span id="clock"></span></div>
+
+<script>
+const HOST = location.hostname;
+const STATE = 'http://' + HOST + ':8888/state';
+const LOGS = 'http://' + HOST + ':8888/logs';
+const WS = 'ws://' + HOST + ':8888/ws';
+
+let chains = {};
+
+setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString() }, 1000);
+
+// Helper: handle both CamelCase and lowercase keys
+const getVal = (obj, key) => obj[key] !== undefined ? obj[key] : obj[key.toLowerCase()];
+
+function getStatus(ch) {
+  const err = getVal(ch, 'LastError') || getVal(ch, 'last_error');
+  const healthyNodes = getVal(ch, 'HealthyNodes') || getVal(ch, 'healthy_nodes');
+  const missed = getVal(ch, 'Missed') || getVal(ch, 'missed') || 0;
+  if(err || healthyNodes === 0) return 'critical';
+  if(missed > 2) return 'warning';
+  return 'healthy';
+}
+
+function addLog(text, level) {
+  const el = document.getElementById('logs-list');
+  const item = document.createElement('div');
+  item.className = 'log-item ' + (level||'info');
+  item.textContent = new Date().toLocaleTimeString() + ' ' + text;
+  el.insertBefore(item, el.firstChild);
+  if(el.children.length > 50) el.removeChild(el.lastChild);
+}
+
+function render() {
+  const sorted = Object.values(chains).sort((a,b) => (getVal(a, 'Name')||'').localeCompare(getVal(b, 'Name')||''));
+  let h=0,w=0,c=0;
+  
+  if(sorted.length === 0) {
+     document.getElementById('chains-grid').innerHTML = '<div style="color:var(--text3)">Waiting for chain data...</div>';
+     return;
+  }
+
+  document.getElementById('chains-grid').innerHTML = sorted.map(ch => {
+    const s = getStatus(ch);
+    if(s==='healthy')h++;else if(s==='warning')w++;else c++;
+    const name = getVal(ch, 'Name') || getVal(ch, 'name') || '?';
+    const height = getVal(ch, 'Height') || getVal(ch, 'height') || 0;
+    const bonded = getVal(ch, 'Bonded') || getVal(ch, 'bonded');
+    const missed = getVal(ch, 'Missed') || getVal(ch, 'missed') || 0;
+    const window = getVal(ch, 'Window') || getVal(ch, 'window') || '?';
+    const blocks = (getVal(ch, 'Blocks') || getVal(ch, 'blocks') || []).slice(-60).map(b => {
+      return `<div class="block ${b===3?'signed':b===4?'proposed':b===0?'missed':''}"></div>`;
+    }).join('');
+    
+    return `<div class="chain-card ${s}">
+      <div class="chain-header"><div class="chain-name">${name}</div><div class="chain-status ${s}">${s.toUpperCase()}</div></div>
+      <div class="chain-meta">
+        <div class="meta-item"><span class="label">Height</span><span class="value highlight">${height.toLocaleString()}</span></div>
+        <div class="meta-item"><span class="label">Bonded</span><span class="value" style="color:${bonded?'var(--green)':'var(--red)'}">${bonded?'Yes':'No'}</span></div>
+        <div class="meta-item"><span class="label">Missed</span><span class="value" style="color:${missed>0?'var(--amber)':'var(--text2)'}">${missed}/${window}</span></div>
+        <div class="meta-item"><span class="label">Nodes</span><span class="value">${getVal(ch, 'HealthyNodes')||getVal(ch, 'healthy_nodes')||0}/${getVal(ch, 'Nodes')||getVal(ch, 'nodes')||0}</span></div>
+      </div>
+      <div class="blocks-container"><div class="blocks-row">${blocks}</div></div>
+    </div>`;
+  }).join('');
+  
+  document.getElementById('total-chains').textContent = sorted.length;
+  document.getElementById('healthy-count').textContent = h;
+  document.getElementById('warning-count').textContent = w;
+  document.getElementById('critical-count').textContent = c;
+}
+
+const updateData = (data) => {
+  const list = data.Status || data.status || (Array.isArray(data) ? data : []);
+  list.forEach(c => { const n = getVal(c, 'Name'); if(n) chains[n] = c; });
+  render();
+};
+
+fetch(STATE).then(r=>r.json()).then(d => { updateData(d); addLog('State loaded', 'ok'); }).catch(e => addLog('Fetch error', 'error'));
+
+setInterval(() => {
+  fetch(LOGS).then(r=>r.json()).then(l => {
+    if(Array.isArray(l)) l.slice(0,1).forEach(x => { if(x.Msg) addLog(x.Msg, 'info') });
+  }).catch(()=>{});
+}, 5000);
+
+function wsConnect() {
+  const ws = new WebSocket(WS);
+  ws.onopen = () => { document.getElementById('ws-status').textContent = 'Live'; document.querySelector('.status-dot').style.background = 'var(--green)'; addLog('WS OK', 'ok'); };
+  ws.onmessage = (e) => { try { const d = JSON.parse(e.data); if(d.msgType==='update') updateData(d); else if(getVal(d, 'Name')) { chains[getVal(d, 'Name')] = d; render(); } } catch(_) {} };
+  ws.onclose = () => { document.getElementById('ws-status').textContent = 'Reconnecting'; document.querySelector('.status-dot').style.background = 'var(--amber)'; setTimeout(wsConnect, 3000); };
+}
+wsConnect();
+</script>
+</body>
+</html>

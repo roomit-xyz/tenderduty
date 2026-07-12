@@ -1,368 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <style>
-    :root {
-      --roomit-green: #00D4AA;
-      --roomit-green-dark: #00B89A;
-      --roomit-green-light: #1ADDC0;
-      --roomit-green-accent: #00F2C3;
-      --dark-bg: #0F1419;
-      --dark-card: #1A1F2E;
-      --dark-accent: #2A3441;
-      --light-text: #E8F4F8;
-      --muted-text: #A0AEC0;
-      --success: #10B981;
-      --warning: #F59E0B;
-      --error: #EF4444;
-    }
-
-    * { box-sizing: border-box; }
-
-    body.roomit-theme {
-      background: linear-gradient(135deg, var(--dark-bg) 0%, #1A1F2E 100%);
-      color: var(--light-text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      min-height: 100vh;
-      margin: 0; padding: 0;
-    }
-
-    .elegant-card {
-      background: var(--dark-card);
-      border: 1px solid rgba(0, 212, 170, 0.2);
-      border-radius: 12px;
-      box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(0, 212, 170, 0.05);
-      backdrop-filter: blur(10px);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .elegant-card:hover {
-      border-color: rgba(0, 212, 170, 0.4);
-      box-shadow: 
-        0 8px 32px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(0, 212, 170, 0.1);
-    }
-
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .status-active {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--success);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .status-jailed {
-      background: rgba(245, 158, 11, 0.2);
-      color: var(--warning);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-
-    .status-tombstoned {
-      background: rgba(239, 68, 68, 0.2);
-      color: var(--error);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-
-    .height-animation {
-      animation: pulseGreen 0.6s ease-in-out;
-      color: var(--roomit-green) !important;
-      font-weight: 600;
-    }
-
-    @keyframes pulseGreen {
-      0% { transform: scale(1); color: var(--light-text); }
-      50% { transform: scale(1.05); color: var(--roomit-green-accent); text-shadow: 0 0 8px rgba(0, 212, 170, 0.4); }
-      100% { transform: scale(1); color: var(--roomit-green); }
-    }
-
-    .elegant-table {
-      background: var(--dark-card);
-      border-radius: 12px;
-      border: 1px solid rgba(0, 212, 170, 0.1);
-      overflow: hidden;
-      width: 100%;
-    }
-
-    .elegant-table th {
-      background: linear-gradient(90deg, var(--roomit-green-dark), var(--roomit-green));
-      color: white;
-      font-weight: 600;
-      padding: 12px 8px;
-      border: none;
-      font-size: 13px;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
-    .elegant-table td {
-      padding: 10px 8px;
-      border-bottom: 1px solid rgba(0, 212, 170, 0.1);
-      vertical-align: middle;
-      font-size: 13px;
-    }
-
-    .elegant-table tr:hover {
-      background: rgba(0, 212, 170, 0.05);
-    }
-
-    /* Responsive table wrapper */
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .elegant-logs {
-      background: var(--dark-card);
-      border: 1px solid rgba(0, 212, 170, 0.2);
-      border-radius: 12px;
-      color: var(--light-text);
-      font-family: 'Fira Code', 'Monaco', monospace;
-      padding: 16px;
-      line-height: 1.5;
-      scroll-behavior: smooth;
-      font-size: 12px;
-      word-break: break-all;
-    }
-
-    .elegant-logs::-webkit-scrollbar { width: 6px; }
-    .elegant-logs::-webkit-scrollbar-track { background: var(--dark-accent); border-radius: 4px; }
-    .elegant-logs::-webkit-scrollbar-thumb { background: var(--roomit-green); border-radius: 4px; }
-    .elegant-logs::-webkit-scrollbar-thumb:hover { background: var(--roomit-green-light); }
-
-    .canvas-container {
-      background: var(--dark-card);
-      border-radius: 12px;
-      border: 1px solid rgba(0, 212, 170, 0.2);
-      padding: 16px;
-      margin-bottom: 24px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .light-toggle {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      background: var(--dark-card);
-      border: 1px solid rgba(0, 212, 170, 0.3);
-      border-radius: 50%;
-      width: 42px;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .light-toggle:hover {
-      background: var(--roomit-green);
-      color: white;
-    }
-
-    .uptime-bar {
-      background: var(--dark-accent);
-      border-radius: 4px;
-      height: 6px;
-      overflow: hidden;
-      margin: 4px 0;
-      min-width: 40px;
-    }
-
-    .uptime-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--roomit-green-dark), var(--roomit-green));
-      border-radius: 4px;
-      transition: width 0.5s ease;
-    }
-
-    .chain-badge {
-      display: inline-block;
-      background: rgba(0, 212, 170, 0.1);
-      color: var(--roomit-green-light);
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 500;
-      border: 1px solid rgba(0, 212, 170, 0.3);
-      white-space: nowrap;
-    }
-
-    .footer-elegant {
-      margin-top: 32px;
-      padding: 16px 0;
-      border-top: 1px solid rgba(0, 212, 170, 0.1);
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .footer-elegant a {
-      color: var(--muted-text);
-      transition: color 0.3s ease;
-      text-decoration: none;
-    }
-
-    .footer-elegant a:hover { color: var(--roomit-green); }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    /* ═══════ RESPONSIVE BREAKPOINTS ═══════ */
-
-    /* Tablet & below */
-    @media (max-width: 1024px) {
-      .elegant-table th { font-size: 11px; padding: 8px 4px; }
-      .elegant-table td { font-size: 11px; padding: 8px 4px; }
-      .status-indicator { font-size: 10px; padding: 2px 6px; }
-      .canvas-container { padding: 8px; }
-      .chain-badge { font-size: 10px; }
-    }
-
-    /* Mobile */
-    @media (max-width: 768px) {
-      /* Hide less-critical columns on mobile */
-      .elegant-table th:nth-child(6),
-      .elegant-table td:nth-child(6) { display: none; } /* Uptime col */
-      
-      .elegant-table th { font-size: 10px; padding: 6px 3px; }
-      .elegant-table td { font-size: 10px; padding: 6px 3px; }
-      
-      .container-main { padding: 12px !important; }
-      
-      .light-toggle {
-        width: 36px; height: 36px;
-        top: 8px; right: 8px;
-      }
-      
-      .light-toggle svg { width: 16px; height: 16px; }
-      
-      .elegant-logs { font-size: 10px; padding: 12px; }
-      
-      .canvas-container {
-        margin-bottom: 12px;
-        padding: 8px;
-      }
-
-      /* Uptime col hidden, adjust table spacing */
-      .elegant-table td { white-space: nowrap; }
-    }
-
-    /* Small phone */
-    @media (max-width: 480px) {
-      /* Hide uptime AND nodes columns */
-      .elegant-table th:nth-child(6),
-      .elegant-table td:nth-child(6),
-      .elegant-table th:nth-child(7),
-      .elegant-table td:nth-child(7) { display: none; }
-
-      .elegant-table th { font-size: 9px; padding: 6px 2px; }
-      .elegant-table td { font-size: 9px; padding: 6px 2px; }
-      
-      .status-indicator { font-size: 9px; padding: 1px 4px; gap: 3px; }
-      .chain-badge { font-size: 9px; padding: 1px 4px; }
-      
-      .container-main { padding: 8px !important; }
-      
-      .elegant-logs {
-        font-size: 9px; padding: 8px;
-        height: 200px !important;
-      }
-      
-      .elegant-card { border-radius: 8px; }
-      
-      .light-toggle { top: 4px; right: 4px; }
-      
-      .footer-elegant { font-size: 10px; margin-top: 20px; }
-    }
-  </style>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <link rel="stylesheet" href="css/uikit.min.css" />
-  <title>Tenderduty Dashboard</title>
-  <script src="js/uikit.min.js"></script>
-  <script src="./js/uikit-icons.min.js"></script>
-  <script src="./js/lodash.min.js"></script>
-  <script type="application/javascript" src="grid.js"></script>
-  <script type="application/javascript" src="status.js"></script>
-  <link rel="icon" href="favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderDuty v2</title>
+<style>
+:root{--bg:#0F172A;--surface:#1E293B;--surface2:#334155;--text:#F8FAFC;--text2:#94A3B8;--text3:#64748B;--green:#10B981;--green-glow:#10B98140;--amber:#F59E0B;--amber-glow:#F59E0B40;--red:#EF4444;--red-glow:#EF444440;--blue:#3B82F6;--blue-glow:#3B82F640;--radius:16px}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px;margin:0}
+.container{max-width:1500px;margin:0 auto}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.header h1{font-size:1.5rem;font-weight:700}
+.header h1 span{color:var(--green)}
+.status-pill{display:flex;align-items:center;gap:8px;background:var(--surface);padding:6px 14px;border-radius:100px;font-size:0.75rem}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--surface2)}
+.stat-card .label{font-size:0.68rem;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
+.stat-card .value{font-size:1.5rem;font-weight:700}
+.stat-card .value.green{color:var(--green)}.stat-card .value.amber{color:var(--amber)}.stat-card .value.red{color:var(--red)}
+.legend-bar{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;background:var(--surface);border-radius:var(--radius);padding:10px 16px;border:1px solid var(--surface2);font-size:0.72rem;color:var(--text2);align-items:center}
+.legend-dot{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.legend-dot.signed{background:var(--green)}.legend-dot.proposed{background:var(--blue)}.legend-dot.missed{background:var(--red)}.legend-dot.none{background:var(--surface2)}
+.main-grid{display:grid;grid-template-columns:1fr 300px;gap:18px}
+.chains-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.chain-card{background:var(--surface);border-radius:var(--radius);padding:20px;border:1px solid var(--surface2);position:relative;overflow:hidden;transition:all .25s}
+.chain-card:hover{border-color:var(--green);box-shadow:0 0 16px var(--green-glow);transform:translateY(-2px)}
+.chain-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)}
+.chain-card.warning::before{background:var(--amber)}.chain-card.critical::before{background:var(--red)}
+.chain-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.chain-name{font-size:1rem;font-weight:600}
+.chain-status{font-size:0.7rem;padding:2px 10px;border-radius:100px}
+.chain-status.healthy{background:#10B98120;color:var(--green)}.chain-status.warning{background:#F59E0B20;color:var(--amber)}.chain-status.critical{background:#EF444420;color:var(--red)}
+.chain-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.meta-item .label{font-size:0.65rem;color:var(--text3);text-transform:uppercase}
+.meta-item .value{font-size:0.82rem;font-weight:500;color:var(--text2)}
+.meta-item .value.highlight{color:var(--text)}
+.blocks-container{margin-top:10px}
+.blocks-label{font-size:0.65rem;color:var(--text3);text-transform:uppercase;margin-bottom:6px}
+.blocks-row{display:flex;gap:3px;flex-wrap:wrap}
+.block{width:11px;height:24px;border-radius:3px;background:var(--surface2);transition:all .25s cubic-bezier(0.34,1.56,0.64,1);cursor:default}
+.block.signed{background:var(--green);animation:blockGlow 3s ease-in-out infinite}
+.block.missed{background:var(--red)}
+.block.proposed{background:var(--blue);animation:blockPulse 2s ease-in-out infinite}
+.block:hover{transform:scaleY(1.6) scaleX(1.2)}
+@keyframes blockGlow{0%,100%{box-shadow:0 0 4px var(--green-glow)}50%{box-shadow:0 0 12px var(--green-glow),0 0 20px rgba(16,185,129,0.15)}}
+@keyframes blockPulse{0%,100%{box-shadow:0 0 4px var(--blue-glow)}50%{box-shadow:0 0 10px var(--blue-glow),0 0 16px rgba(59,130,246,0.15)}}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+.log-panel{background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2);padding:16px;max-height:520px;display:flex;flex-direction:column}
+.log-panel h3{font-size:0.8rem;font-weight:600;margin-bottom:10px;color:var(--text2)}
+.log-list-scroll{flex:1;overflow-y:auto;min-height:350px}
+.log-list{display:flex;flex-direction:column;gap:4px;font-size:0.68rem;font-family:monospace}
+.log-item{padding:5px 8px;background:var(--surface2);border-radius:4px;border-left:3px solid var(--text3);line-height:1.35;word-break:break-all;color:var(--text2)}
+.log-item.info{border-left-color:var(--blue)}.log-item.ok{border-left-color:var(--green)}.log-item.warn{border-left-color:var(--amber)}.log-item.error{border-left-color:var(--red)}
+.footer{margin-top:28px;text-align:center;font-size:0.68rem;color:var(--text3)}
+</style>
 </head>
-
-<body class="roomit-theme" onload="loadState(); legend()">
-<div class="uk-container uk-width-expand container-main" style="padding: 24px; max-width: 100%;">
-  
-  <div class="light-toggle" onclick="lightMode()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-    </svg>
-  </div>
-
-  <div class="canvas-container" id="canvasDiv">
-    <div style="min-width: 400px;">
-      <canvas id="canvas" height="24" width="800"></canvas>
+<body>
+<div class="container">
+<div class="header">
+  <h1>Tender<span>Duty</span></h1>
+  <div class="status-pill"><div class="status-dot"></div><span id="ws-status">Connecting</span></div>
+</div>
+<div class="stats-bar">
+  <div class="stat-card"><div class="label">Chains</div><div class="value" id="total-chains">0</div></div>
+  <div class="stat-card"><div class="label">Healthy</div><div class="value green" id="healthy-count">0</div></div>
+  <div class="stat-card"><div class="label">Warning</div><div class="value amber" id="warning-count">0</div></div>
+  <div class="stat-card"><div class="label">Critical</div><div class="value red" id="critical-count">0</div></div>
+</div>
+<div class="legend-bar">
+  <span class="legend-dot signed"></span>Signed
+  <span class="legend-dot proposed"></span>Proposed
+  <span class="legend-dot missed"></span>Missed
+  <span class="legend-dot none"></span>None
+</div>
+<div class="main-grid">
+  <div class="chains-grid" id="chains-grid"></div>
+  <div class="sidebar">
+    <div class="log-panel">
+      <h3>📋 Live Logs</h3>
+      <div class="log-list-scroll"><div class="log-list" id="logs-list"></div></div>
     </div>
-    <div id="legendContainer" class="uk-nav-center uk-padding-remove" style="margin-top: 12px; overflow-x: auto;">
-      <canvas id="legend" height="32" width="700"></canvas>
-    </div>
-  </div>
-
-  <div class="elegant-card" style="margin-bottom: 24px;">
-    <div class="table-responsive">
-      <table class="uk-table uk-table-small uk-table-justify elegant-table uk-padding-remove" style="min-width: 600px;">
-        <thead>
-        <tr>
-          <th></th>
-          <th>Chain</th>
-          <th>Height</th>
-          <th>Moniker</th>
-          <th style="text-align: center">Status</th>
-          <th class="uk-text-center">Uptime</th>
-          <th class="uk-text-center">Nodes</th>
-        </tr>
-        </thead>
-        <tbody id="statusTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="elegant-card" id="logContainer" style="padding: 0;">
-    <div style="padding: 12px 16px; border-bottom: 1px solid rgba(0, 212, 170, 0.1);">
-      <h4 style="margin: 0; color: var(--roomit-green); font-size: 14px; font-weight: 600;">
-        Real-time Logs
-        <span style="display: inline-block; width: 8px; height: 8px; background: var(--roomit-green); border-radius: 50%; margin-left: 8px; animation: pulse 2s infinite;"></span>
-      </h4>
-    </div>
-    <pre id="logs" class="elegant-logs uk-resize-vertical" style="margin: 0; border-radius: 0 0 12px 12px; height: 300px;"></pre>
-  </div>
-
-  <div class="footer-elegant">
-    Maintainer by
-    <a href="https://github.com/roomit-xyz/tenderduty">
-      <img src="favicon.ico" alt="[ roomit ]" style="height: 20px; opacity: 0.7; vertical-align: middle;">
-      <span uk-icon="github" style="color: var(--muted-text);"></span>
-    </a>
-    <a href="https://roomit.xyz" style="margin-left: 12px;">PT Roomit Trimiko Digital</a><br>
-    Powered by
-    <a href="https://blockpane.com">
-      <img src="blockpane.png" style="height: 20px; opacity: 0.7; vertical-align: middle;">
-      Blockpane
-    </a>
   </div>
 </div>
+</div>
+<div class="footer">TenderDuty v2 · Roomit</div>
+<script>
+const HOST=location.hostname;
+const STATE_URL = 'http://'+HOST+':8888/state';
+const LOGS_URL  = 'http://'+HOST+':8888/logs';
+const WS_URL    = 'ws://'+HOST+':8888/ws';
+let chains = {};
+const v = (o,k) => o[k] ?? o[k.toLowerCase()];
+function addLog(msg, level, ts) {
+  const el = document.getElementById('logs-list');
+  const d = document.createElement('div');
+  d.className = 'log-item ' + (level||'info');
+  const t = ts ? new Date(ts*1000).toLocaleTimeString() : new Date().toLocaleTimeString();
+  d.innerHTML = '<span style="color:var(--text3);font-size:0.62rem">' + t + '</span> ' + msg;
+  el.insertBefore(d, el.firstChild);
+  if(el.children.length > 100) el.removeChild(el.lastChild);
+}
+function getHealthy(ch) {
+  const nodes = v(ch,'HealthyNodes')||v(ch,'healthy_nodes');
+  if(nodes !== undefined && nodes === 0) return 'critical';
+  const err = v(ch,'LastError')||v(ch,'last_error');
+  if(err) return 'critical';
+  const missed = v(ch,'Missed')||v(ch,'missed')||0;
+  if(missed > 2) return 'warning';
+  return 'healthy';
+}
+const blockMap = {0:'missed',1:'none',2:'none',3:'signed',4:'proposed'};
+function render() {
+  const list = Object.values(chains).sort((a,b)=>(v(a,'Name')||'').localeCompare(v(b,'Name')||''));
+  let hh=0,ww=0,cc=0;
+  if(!list.length) {
+    document.getElementById('chains-grid').innerHTML = '<div style="color:var(--text3);padding:20px">Waiting for chain data…</div>';
+    return;
+  }
+  document.getElementById('chains-grid').innerHTML = list.map(ch=>{
+    const st = getHealthy(ch);
+    if(st==='healthy') hh++; else if(st==='warning') ww++; else cc++;
+    const blocks = (v(ch,'Blocks')||[]).slice(-65).map(b=>{
+      const cls = blockMap[b] || 'none';
+      return `<div class="block ${cls}"></div>`;
+    }).join('');
+    return `<div class="chain-card ${st}">
+      <div class="chain-header">
+        <div class="chain-name">${v(ch,'Name')||v(ch,'name')||'?'}</div>
+        <div class="chain-status ${st}">${st.toUpperCase()}</div>
+      </div>
+      <div class="chain-meta">
+        <div class="meta-item"><span class="label">Height</span><span class="value highlight">${Number(v(ch,'Height')).toLocaleString()}</span></div>
+        <div class="meta-item"><span class="label">Missed</span><span class="value">${(v(ch,'Missed')||0)}/${(v(ch,'Window')||'?')}</span></div>
+      </div>
+      <div class="blocks-container"><div class="blocks-label">Blocks</div><div class="blocks-row">${blocks}</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('total-chains').textContent=list.length;
+  document.getElementById('healthy-count').textContent=hh;
+  document.getElementById('warning-count').textContent=ww;
+  document.getElementById('critical-count').textContent=cc;
+}
+function updateData(d){
+  const status=v(d,'Status')||d.status||(Array.isArray(d)?d:[]);
+  if(!Array.isArray(status)) return;
+  status.forEach(c=>{ const n=v(c,'Name'); if(n) chains[n]=c; });
+  render();
+}
+fetch(STATE_URL).then(r=>r.json()).then(d=>{
+  updateData(d);
+  const n = Object.keys(chains).length;
+  addLog('Loaded '+n+' chain'+(n!==1?'s':'')+' from /state','ok');
+}).catch(e=>addLog('Fetch /state: '+e.message,'error'));
+let lastLogTs = 0;
+function pollLogs(){
+  fetch(LOGS_URL).then(r=>r.json()).then(arr=>{
+    if(!Array.isArray(arr)||!arr.length) return;
+    // Backend sends newest-first; render new ones (oldest->newest so newest ends on top)
+    const fresh = arr.filter(x=>(v(x,'ts')||v(x,'Ts')||0) > lastLogTs);
+    fresh.reverse().forEach(x=>{
+      const msg = v(x,'msg')||v(x,'Msg')||'';
+      const ts = v(x,'ts')||v(x,'Ts');
+      const lvl = msg.includes('error')||msg.includes('❌')?'error':(msg.includes('not synced')||msg.includes('⚠')?'warn':'info');
+      addLog(msg, lvl, ts);
+      if(ts>lastLogTs) lastLogTs=ts;
+    });
+  }).catch(()=>{});
+}
+pollLogs();
+setInterval(pollLogs, 3000);
+function wsConnect(){
+  const ws=new WebSocket(WS_URL);
+  ws.onopen=()=>{
+    document.getElementById('ws-status').textContent = 'Live';
+    addLog('WebSocket connected','ok');
+  };
+  ws.onmessage=(e)=>{
+    try{
+      const d=JSON.parse(e.data);
+      if(v(d,'msgType')==='update'){
+        updateData(d);
+      } else if(v(d,'msg')||v(d,'Msg')){
+        const m=v(d,'msg')||v(d,'Msg'); addLog(m, m.includes('❌')?'error':'info', v(d,'ts')||v(d,'Ts'));
+      } else if(v(d,'Name')){
+        chains[v(d,'Name')]=d; render();
+      }
+    }catch(_){addLog('Parse error','error');}
+  };
+  ws.onclose=()=>{
+    document.getElementById('ws-status').textContent = 'Reconnecting';
+    setTimeout(wsConnect, 3000);
+  };
+  ws.onerror = ()=>{ addLog('WS error','error'); ws.close(); };
+}
+wsConnect();
+</script>
 </body>
 </html>

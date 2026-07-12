@@ -1,173 +1,96 @@
-# TenderDuty 🛰️
+# TenderDuty v2 — Roomit Validator Monitor
 
-> Fork dari [blockpane/tenderduty](https://github.com/blockpane/tenderduty) v2 dengan tambahan **dukungan Gno.land (TM2)** dan **dashboard mobile responsive**.
+Multi-chain validator monitoring dashboard dengan WebSocket live updates, block signature tracking, dan alerting system.
 
-Validator monitoring dashboard dengan alert multi-channel (Telegram, Discord, Slack, PagerDuty, Gotify) untuk chain Cosmos SDK **dan Gno.land (gno.land/test13, dll)**.
+## Supported Chains
 
----
+| Chain | Type | Parser | Status |
+|---|---|---|---|
+| AtomOne Testnet | CometBFT v0.38 | Dual (Precommits + Signatures) | ✅ |
+| Dora Testnet | Cosmos SDK | Standard Tendermint | ✅ |
+| Empe Testnet | Cosmos SDK | Standard Tendermint | ✅ |
+| GNO.LAND Testnet-13 | TM2 | Polling (RPC block) | ✅ |
 
-## ✨ Fitur
+## Features
 
-### Original TenderDuty
-- ✅ Real-time monitoring validator (signed / proposed / missed blocks)
-- ✅ Alert: stalled, consecutive missed, percentage missed, inactive
-- ✅ Multi-channel: Telegram, Discord, Slack, PagerDuty, Gotify
-- ✅ Dashboard web (Canvas block visualization)
-- ✅ Prometheus metrics exporter
-- ✅ Healthcheck ping (Uptime Kuma compatible)
-- ✅ Encrypted config (Argon2id + AES-256-CBC)
+- **Live Dashboard** — WebSocket‑powered UI di port `8888` dengan animasi blok, legend warna, dan log stream
+- **3‑Path Signing Parser** — AtomOne (CometBFT), GNO (TM2 polling), General Tendermint
+- **Alerting** — Telegram, Gotify, PagerDuty, Discord
+- **Prometheus Metrics** — `/metrics` endpoint
+- **Healthcheck Ping** — Push ke healthchecks.io / custom
+- **Auto‑failover** — Jika node RPC down, auto switch ke backup node
 
-### 🆕 Roomit Fork (v2.1)
-- ✅ **Gno.land (TM2) provider** — monitoring chain Gno.land via HTTP polling
-- ✅ **Gno-specific:** valoper address resolve via `vm/qeval` abci_query
-- ✅ **Gno-specific:** consensus address lookup via `gno_valopers_realm`
-- ✅ **Graceful handling:** VM panic "valoper does not exist" tidak bikin node down
-- ✅ **Responsive dashboard** — mobile-friendly (table hidden cols, scrollable canvas)
-- ✅ **Light/Dark theme** (Roomit green)
-- ✅ **Auto-pruning** blocks window (configurable)
-- ✅ **Multi-chain support** — Cosmos + Gno side-by-side
-
----
-
-## 🚀 Quick Start
-
-### 1. Build
+## Quick Start
 
 ```bash
-# Install Go 1.19+ (jika belum ada)
-wget https://go.dev/dl/go1.19.13.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.19.13.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
+# Build
+go build -o tenderduty-manual ./main.go
 
-# Build binary
-git clone <this-repo> tenderduty
-cd tenderduty
-go build -o tenderduty main.go
-
-# Atau via Docker
-docker compose up -d
-```
-
-### 2. Buat Config
-
-Lihat `example-config.yml` untuk template lengkap. Minimal:
-
-```yaml
-enable_dashboard: yes
-listen_port: 8888
-
-chains:
-  my-chain:
-    chain_id: my-chain-1
-    valoper_address: myvaloper1xxxx
-    nodes:
-      - url: http://localhost:26657
-        alert_if_down: yes
-    alerts:
-      stalled_enabled: yes
-      consecutive_enabled: yes
-      percentage_enabled: yes
-```
-
-### 3. Run
-
-```bash
-./tenderduty -f config.yml
+# Run
+./tenderduty-manual -f config.yml
 ```
 
 Dashboard: `http://localhost:8888`
-Prometheus: `http://localhost:28686/metrics`
 
----
+## Configuration
 
-## 🌍 Gno.land Support
-
-TenderDuty mendukung monitoring **chain Gno.land (TM2)** via `chain_type: gno`.
-
-### Konfigurasi
+Edit `config.yml`:
 
 ```yaml
+enable_dashboard: true
+hide_logs: false
+listen_port: 8888
+
 chains:
-  gno-test13:
-    chain_id: test-13
-    chain_type: gno                                    # ⬅ WAJIB
-    gno_valopers_realm: gno.land/r/gnops/valopers      # ⬅ custom realm opsional
-    valoper_address: g1zyk4gkw68lzx9yfgcda2ur36yy6dfdtyzglvsc
-    nodes:
-      - url: http://10.35.4.196:26657
-        alert_if_down: yes
+  "AtomOne Testnet":
+    chain_id: atomone-testnet-1
+    valoper_address: atonevaloper1...
     alerts:
-      stalled_minutes: 10
-      consecutive_missed: 5
-      percentage_missed: 10
+      stalled_enabled: yes
+      consecutive_enabled: yes
+    nodes:
+      - url: http://10.35.4.199:16711
 ```
 
-### Field Wajib untuk Gno
-| Field | Wajib | Default | Keterangan |
-|---|---|---|---|
-| `chain_type` | ✅ ya | `cosmos` | Set `gno` untuk Gno.land |
-| `gno_valopers_realm` | ❌ | `gno.land/r/gnops/valopers` | Path realm di gno.land |
-| `valoper_address` | ✅ ya | - | Validator address (g1...) |
-| `chain_id` | ✅ ya | - | Network ID (e.g. `test-13`) |
-
-### Bagaimana Cara Kerjanya
+## Directory Structure
 
 ```
-TenderDuty (Gno)                 Gno.land Node
-    │                                 │
-    ├── GET /status ────────────────► │ (health, height, catching_up)
-    │                                 │
-    ├── GET /validators ────────────► │ (active set, consensus address)
-    │                                 │
-    ├── abci_query vm/qeval ──────►  │ (resolve g1xxx → moniker via realm)
-    │                                 │
-    └── GET /block (poll 5s) ──────► │ (block signing status)
-                                      │
+td2/
+├── dashboard/
+│   ├── server.go    # HTTP + WebSocket server (reads from td2/static/)
+│   └── types.go     # Data structures
+├── static/
+│   └── index.html   # Dashboard UI (served directly, no embed)
+├── ws.go            # WebSocket block subscription
+├── ws_poll.go       # RPC polling (GNO/AtomOne TM2 chains)
+├── run.go           # Main orchestrator
+├── alert.go         # Alerting logic
+├── prometheus.go    # Metrics
+└── ...
 ```
 
-Berbeda dengan Cosmos (WebSocket subscription), Gno polling `/block` tiap 5 detik.
+## UI
 
-### Scaling untuk Production
+Dashboard v2 menampilkan:
+- **Stats bar**: Total chains, healthy/warning/critical count
+- **Legend**: Signed (🟢 hijau), Proposed (🔵 biru), Missed (🔴 merah), None (⚪ abu‑abu)
+- **Chain cards**: Height, missed blocks, signing history (animasi glow)
+- **Live Logs**: Sidebar kanan, polling `/logs` setiap 3 detik
 
-| Use case | Setting |
-|---|---|
-| Testnet Gno.land (test13) | `chain_type: gno`, `chain_id: test-13` |
-| Mainnet Gno.land | `chain_type: gno`, `chain_id: gno.land` |
-| Custom valopers realm | `gno_valopers_realm: your.realm/path` |
-| Multiple Gno nodes | Tambah entry di `nodes:` list |
+## Maintenance
 
----
+UI update tanpa rebuild:
+```bash
+# Edit langsung
+vim td2/static/index.html
 
-## 📱 Responsive Dashboard
+# Restart service
+sudo pkill -f tenderduty-manual
+nohup ./tenderduty-manual -f config.yml > /var/log/tenderduty.log 2>&1 &
+```
 
-Dashboard otomatis adapt:
-- **Desktop** (>1024px): full table, semua kolom
-- **Tablet** (768-1024px): font lebih kecil, padding ketat
-- **Mobile** (≤768px): kolom Uptime disembunyikan, scroll horizontal
-- **Phone** (≤480px): kolom Uptime + Nodes disembunyikan, font compact
+## Security
 
----
-
-## 🛠️ Tech Stack
-
-- **Go 1.19+**
-- **Cosmos SDK v0.45.11** (Tendermint v0.34.24)
-- **Gno TM2** (HTTP /status, /validators, abci_query)
-- **gorilla/websocket**
-- **prometheus/client_golang**
-- **UIkit 3.16** + custom Roomit theme
-
----
-
-## 📜 License
-
-Original: AGPL-3.0 (blockpane/tenderduty)
-Fork: Same license.
-
----
-
-## 🙏 Credits
-
-- Original: [blockpane/tenderduty](https://github.com/blockpane/tenderduty) by [@blockpane](https://github.com/blockpane)
-- Gno.land integration: [@roomit-xyz](https://github.com/roomit-xyz)
-- Maintainer: PT Roomit Trimiko Digital
+- Dashboard port (`8888`) hanya terbuka di jaringan internal (`10.35.4.0/24`)
+- Log messages di‑redact jika `hide_logs: true`
+- Tidak ada data sensitif di UI statis
