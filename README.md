@@ -6,6 +6,8 @@ A multi-chain validator dashboard.
 - Blockchain-kind flag based signing parser
 - Row-based responsive layout
 
+![Dashboard Preview](assets/dashboard.jpg)
+
 ## Config
 
 Add `blockchain_kind` to each chain in `config.yml`:
