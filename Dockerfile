@@ -1,36 +1,28 @@
-# 1st stage, build app
-FROM golang:1.19-alpine as builder
+# TenderDuty v2 Roomit — Multi-chain validator monitor
+# Supports: AtomOne (CometBFT), GNO (TM2 polling), General Tendermint
+
+# Stage 1: build
+FROM golang:1.22-alpine AS builder
 RUN apk add --no-cache git gcc libc-dev
-COPY . /build/app
-WORKDIR /build/app
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath -o tenderduty ./main.go
 
-RUN go get ./... && go build -ldflags "-s -w" -trimpath -o tenderduty main.go
-
-# 2nd stage, create a user to copy, and install libraries needed if connecting to upstream TLS server
-# we don't want the /lib and /lib64 from the go container cause it has more than we need.
-FROM debian:11 AS ssl
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get -y upgrade && apt-get install -y ca-certificates && \
-    addgroup --gid 26657 --system tenderduty && adduser -uid 26657 --ingroup tenderduty --system --home /var/lib/tenderduty tenderduty
-
-# 3rd and final stage, copy the minimum parts into a scratch container, is a smaller and more secure build. This pulls
-# in SSL libraries and CAs so Go can connect to TLS servers.
+# Stage 2: runtime
 FROM alpine:latest
-COPY --from=ssl /etc/ca-certificates /etc/ca-certificates
-COPY --from=ssl /etc/ssl /etc/ssl
-COPY --from=ssl /usr/share/ca-certificates /usr/share/ca-certificates
-COPY --from=ssl /usr/lib /usr/lib
-COPY --from=ssl /lib /lib
-COPY --from=ssl /lib64 /lib64
+RUN apk add --no-cache ca-certificates curl && \
+    addgroup -g 26657 -S tenderduty && \
+    adduser -u 26657 -S -G tenderduty -h /app tenderduty
 
-COPY --from=ssl /etc/passwd /etc/passwd
-COPY --from=ssl /etc/group /etc/group
-COPY --from=ssl --chown=tenderduty:tenderduty /var/lib/tenderduty /var/lib/tenderduty
+COPY --from=builder /build/tenderduty /bin/tenderduty
+COPY --from=builder /build/td2/static/ /app/td2/static/
+COPY --from=builder /build/example-config.yml /app/
 
-COPY --from=builder /build/app/tenderduty /bin/tenderduty
-COPY --from=builder /build/app/example-config.yml /var/lib/tenderduty
-
+# Dashboard reads from /app/td2/static/ (os.DirFS)
 USER tenderduty
-WORKDIR /var/lib/tenderduty
-
+WORKDIR /app
+EXPOSE 8888 28686
 ENTRYPOINT ["/bin/tenderduty"]
+DEOF
