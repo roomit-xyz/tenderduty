@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"sync"
@@ -17,9 +18,47 @@ import (
 var (rootDir fs.FS; rex = regexp.MustCompile(`\W(https?|tcp|wss?)://.+\w`))
 const logLength = 256
 
+// resolveStaticDir finds the td2/static directory dynamically:
+// 1. TENDERDUTY_STATIC_DIR env var (highest priority)
+// 2. relative to executable: <exe>/td2/static, <exe>/../td2/static
+// 3. relative to working dir: ./td2/static, ./static
+// 4. legacy docker path fallback
+func resolveStaticDir() string {
+	if p := os.Getenv("TENDERDUTY_STATIC_DIR"); p != "" {
+		if _, err := os.Stat(filepath.Join(p, "index.html")); err == nil {
+			return p
+		}
+	}
+	exe, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exe)
+		candidates := []string{
+			filepath.Join(exeDir, "td2", "static"),
+			filepath.Join(exeDir, "..", "td2", "static"),
+			filepath.Join(exeDir, "static"),
+		}
+		for _, c := range candidates {
+			if _, err := os.Stat(filepath.Join(c, "index.html")); err == nil {
+				return c
+			}
+		}
+	}
+	cwd, _ := os.Getwd()
+	for _, c := range []string{
+		filepath.Join(cwd, "td2", "static"),
+		filepath.Join(cwd, "static"),
+	} {
+		if _, err := os.Stat(filepath.Join(c, "index.html")); err == nil {
+			return c
+		}
+	}
+	return "/opt/docker/books/tenderduty/td2/static"
+}
+
 func Serve(port string, updates chan *ChainStatus, logs chan LogMessage, hideLogs bool) {
-	// FORCE: Read from external directory
-	rootDir = os.DirFS("/opt/docker/books/tenderduty/td2/static")
+	staticDir := resolveStaticDir()
+	log.Printf("dashboard: serving static files from %s", staticDir)
+	rootDir = os.DirFS(staticDir)
 	var cast broadcast.Broadcaster
 	logCache, statusCache := []byte{'[', ']'}, []byte{'{', '}'}
 	statusMux := sync.Mutex{}
