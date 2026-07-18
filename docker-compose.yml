@@ -1,5 +1,6 @@
 # TenderDuty v2 Roomit — docker-compose
-# Single monolithic service, no Caddy needed for internal use.
+# FHS: bin/ conf/ var/www/td2-v2/
+# Single service, no Caddy needed for internal use.
 
 version: "3.8"
 
@@ -11,8 +12,10 @@ services:
       - "8888:8888"   # Dashboard
       - "28686:28686" # Prometheus exporter
     volumes:
-      - ./config.yml:/app/config.yml:ro
+      - ./conf/config.yml:/app/conf/config.yml:ro
     environment:
+      - CONFIG=/app/conf/config.yml
+      - TENDERDUTY_STATIC_DIR=/app/var/www/td2-v2
       - TZ=Asia/Jakarta
     restart: unless-stopped
     healthcheck:

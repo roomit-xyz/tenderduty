@@ -2,15 +2,24 @@
 
 ### What is tenderduty?
 
-This is a tool for validators running tendermint nodes. It sends notifications when it detects problems.
+A multi-chain validator monitoring dashboard. Supports Tendermint / Cosmos SDK,
+AtomOne (CometBFT fork), and Gno.land (TM2 polling) with custom signing parsers.
+
+**Roomit fork features:**
+- `blockchain_kind` flag (no manual valcons conversion)
+- Gotify & healthcheck (dead man's switch) support
+- Native FHS layout: `bin/`, `conf/`, `var/www/td2-v2/`
+- Auto-detected dashboard static path (embed + dynamic fallback)
+- No Caddy / reverse proxy required for internal use
 
 ## Detailed Documentation Topics
 
-- [Installation](install.md)
-- [Configuration File Settings](config.md)
+- [Installation](install.md) — Docker + native + FHS layout
+- [Configuration File Settings](config.md) — Full field reference
 - [Setting up PagerDuty](pagerduty.md)
 - [Setting up Discord](discord.md)
-- TODO: [Setting up Telegram](telegram.md)
+- [Setting up Telegram](telegram.md)
+- [Setting up Gotify](config.md#gotify-settings) — new in Roomit fork
 - [Prometheus Exports](prometheus.md)
 - [Remotely Configuring Tenderduty](remote.md)
 - [Running on Akash](akash.md)
