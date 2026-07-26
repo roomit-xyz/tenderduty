@@ -175,3 +175,50 @@ alerts:
 |--------------------------|-------------|
 | `nodes[].url`            | RPC endpoint `http(s)://host:port`. |
 | `nodes[].alert_if_down`  | Trigger alert when this specific node goes down. |
+
+---
+
+## Auth / OIDC Settings
+
+Dashboard authentication via OpenID Connect. When enabled, all dashboard routes (except /ws, /logs, /state) require a valid OIDC session.
+
+| Setting                    | Description |
+|----------------------------|-------------|
+| `auth.enabled`             | Master toggle for dashboard authentication. |
+| `auth.oidc.enabled`        | Enable OpenID Connect authentication. |
+| `auth.oidc.provider_url`   | OIDC provider URL (e.g. `https://accounts.google.com`). |
+| `auth.oidc.client_id`      | OAuth2 client ID from your OIDC provider. |
+| `auth.oidc.client_secret`  | OAuth2 client secret from your OIDC provider. |
+| `auth.oidc.redirect_url`   | Callback URL (must match provider config, e.g. `https://tenderduty.example.com/auth/callback`). |
+| `auth.oidc.scopes`         | OAuth2 scopes. Defaults to `openid`, `profile`, `email` if omitted. `openid` is always appended. |
+
+### Example — Google OIDC
+
+```yaml
+auth:
+  enabled: true
+  oidc:
+    enabled: true
+    provider_url: "https://accounts.google.com"
+    client_id: "123456789-xxxxxxxxxxxx.apps.googleusercontent.com"
+    client_secret: "GOCSPX-xxxxxxxxxxxxxxxxxxxx"
+    redirect_url: "https://tenderduty.roomit.xyz/auth/callback"
+    scopes:
+      - openid
+      - profile
+      - email
+```
+
+### Session
+
+- Cookie name: `td_auth`
+- Max age: 24 hours
+- HMAC-SHA256 authenticated (session key regenerated on restart — all users must re-login)
+
+### Public endpoints (no auth required)
+
+- `/ws` — WebSocket
+- `/logs` — Log feed JSON
+- `/state` — Chain status JSON
+- `/auth/login` — OIDC login redirect
+- `/auth/callback` — OIDC callback handler

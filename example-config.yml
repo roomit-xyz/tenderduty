@@ -74,6 +74,23 @@ healthcheck:
   ping_url: https://hc-ping.com/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
   ping_rate: 60
 
+# -----------------------------------------------------------------------------
+# Authentication — OpenID Connect (OIDC) for dashboard
+# When enabled, all dashboard routes (except /ws, /logs, /state) require login.
+# -----------------------------------------------------------------------------
+auth:
+  enabled: false
+  oidc:
+    enabled: false
+    provider_url: ""
+    client_id: ""
+    client_secret: ""
+    redirect_url: ""
+    scopes:
+      - openid
+      - profile
+      - email
+
 # =============================================================================
 # Chains to monitor. One entry per chain. The display name is arbitrary;
 # chain_id is validated against the RPC endpoint.
