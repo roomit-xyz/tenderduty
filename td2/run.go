@@ -65,7 +65,7 @@ func Run(configFile, stateFile, chainConfigDirectory string, password *string) e
 	}()
 
 	if td.EnableDash {
-		go dash.Serve(td.Listen, td.updateChan, td.logChan, td.HideLogs)
+		go dash.Serve(td.Listen, td.updateChan, td.logChan, td.HideLogs, td.Auth)
 		l("starting dashboard on", td.Listen)
 	} else {
 		go func() {

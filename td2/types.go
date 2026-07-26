@@ -69,6 +69,9 @@ type Config struct {
 	// Healthcheck information
 	Healthcheck HealthcheckConfig `yaml:"healthcheck"`
 
+	// Auth enables authentication for the dashboard
+	Auth dash.AuthConfig `yaml:"auth"`
+
 	chainsMux sync.RWMutex // prevents concurrent map access for Chains
 	// Chains has settings for each validator to monitor. The map's name does not need to match the chain-id.
 	Chains map[string]*ChainConfig `yaml:"chains"`

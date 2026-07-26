@@ -12,7 +12,7 @@ services:
       - "8888:8888"   # Dashboard
       - "28686:28686" # Prometheus exporter
     volumes:
-      - ./conf/config.yml:/app/conf/config.yml:ro
+      - ./config.yml:/app/conf/config.yml:ro
     environment:
       - CONFIG=/app/conf/config.yml
       - TENDERDUTY_STATIC_DIR=/app/var/www/td2-v2

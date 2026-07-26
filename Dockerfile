@@ -25,6 +25,7 @@ COPY --from=builder /build/td2/static/index.html /app/var/www/td2-v2/
 COPY --from=builder /build/example-config.yml /app/conf/config.yml.example
 
 # Symlink legacy path for backward compat
+RUN mkdir -p /app/td2/static
 RUN ln -sf /app/var/www/td2-v2 /app/td2/static
 
 RUN chown -R tenderduty:tenderduty /app
