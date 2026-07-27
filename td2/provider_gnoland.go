@@ -288,7 +288,11 @@ func (cc *ChainConfig) GnoGetValInfo(first bool) error {
 			addrLower := strings.ToLower(cc.gnoConsensusAddr)
 			for _, v := range vals {
 				if strings.ToLower(v.Address) == addrLower {
+					if pkBytes, pkErr := base64.StdEncoding.DecodeString(v.PubKey.Value); pkErr == nil {
+					cc.valInfo.Conspub = pkBytes
+				} else {
 					cc.valInfo.Conspub = []byte(strings.ToUpper(v.Address))
+				}
 					cc.valInfo.Valcons = v.Address
 					break
 				}
